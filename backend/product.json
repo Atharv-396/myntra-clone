@@ -1,0 +1,59 @@
+[
+    {
+      "id": 1,
+      "name": "Casual White T-Shirt",
+      "brand": "Roadster",
+      "price": 499,
+      "discount": "60% OFF",
+      "description": "Classic white t-shirt made from premium cotton. Perfect for everyday wear with a comfortable regular fit.",
+      "sizes": ["S", "M", "L", "XL"],
+      "images": [
+        "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1562157873-818bc0726f68?w=500&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=500&auto=format&fit=crop"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Denim Jacket",
+      "brand": "Levis",
+      "price": 2499,
+      "discount": "40% OFF",
+      "description": "Classic denim jacket with a modern twist. Features premium quality denim and comfortable fit.",
+      "sizes": ["S", "M", "L", "XL"],
+      "images": [
+        "https://images.unsplash.com/photo-1523205771623-e0faa4d2813d?w=500&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1542272604-787c3835535d?w=500&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1601933973783-43cf8a7d4c5f?w=500&auto=format&fit=crop"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Summer Dress",
+      "brand": "ONLY",
+      "price": 1299,
+      "discount": "50% OFF",
+      "description": "Flowy summer dress perfect for warm weather. Made from lightweight fabric with a flattering cut.",
+      "sizes": ["XS", "S", "M", "L"],
+      "images": [
+        "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=500&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1623609163859-ca93c959b98a?w=500&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=500&auto=format&fit=crop"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Classic Sneakers",
+      "brand": "Nike",
+      "price": 3499,
+      "discount": "30% OFF",
+      "description": "Versatile sneakers that combine style and comfort. Perfect for both casual wear and light exercise.",
+      "sizes": ["UK6", "UK7", "UK8", "UK9", "UK10"],
+      "images": [
+        "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1607522370275-f14206abe5d3?w=500&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=500&auto=format&fit=crop"
+      ]
+    }
+  ]
+  
