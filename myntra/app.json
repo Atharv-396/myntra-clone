@@ -38,9 +38,11 @@
       "typedRoutes": true
     },
     "extra": {
+      "router": {},
       "eas": {
-        "projectId": "f9b38ac7-9f10-4d68-8789-b6b79a4410f5"
+        "projectId": "9b0f6dca-d68e-4614-a2ff-4773718a45f5"
       }
-    }
+    },
+    "owner": "mr.atharv"
   }
 }
