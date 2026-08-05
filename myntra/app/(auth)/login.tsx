@@ -8,6 +8,7 @@ import {
   Image,
   ScrollView,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import React from "react";
@@ -21,13 +22,25 @@ export default function Login() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [isloading, setisloading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
   const handleLogin = async () => {
+    if (!email.trim() || !password) {
+      setErrorMsg("Please enter email and password");
+      return;
+    }
     try {
+      setErrorMsg("");
       setisloading(true);
       await login(email, password);
       router.replace("/(tabs)");
-    } catch (error) {
-      console.error(error);
+    } catch (error: any) {
+      // Show the actual error message from backend
+      const msg =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Login failed. Please try again.";
+      setErrorMsg(msg);
     } finally {
       setisloading(false);
     }
@@ -44,11 +57,12 @@ export default function Login() {
       <View style={styles.formContainer}>
         <Text style={styles.title}>Welcome to Myntra</Text>
         <Text style={styles.subtitle}>Login to continue shopping</Text>
+
         <TextInput
           style={styles.input}
           placeholder="Email"
           value={email}
-          onChangeText={setEmail}
+          onChangeText={(t) => { setEmail(t); setErrorMsg(""); }}
           autoCapitalize="none"
           keyboardType="email-address"
         />
@@ -57,7 +71,7 @@ export default function Login() {
             style={styles.passwordInput}
             placeholder="Password"
             value={password}
-            onChangeText={setPassword}
+            onChangeText={(t) => { setPassword(t); setErrorMsg(""); }}
             secureTextEntry={!showPassword}
           />
           <TouchableOpacity
@@ -71,6 +85,12 @@ export default function Login() {
             )}
           </TouchableOpacity>
         </View>
+
+        {/* Error message shown here */}
+        {errorMsg ? (
+          <Text style={styles.errorText}>{errorMsg}</Text>
+        ) : null}
+
         <TouchableOpacity
           style={styles.button}
           onPress={handleLogin}
@@ -139,7 +159,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#f5f5f5",
     borderRadius: 10,
-    marginBottom: 15,
+    marginBottom: 10,
   },
   passwordInput: {
     flex: 1,
@@ -148,6 +168,12 @@ const styles = StyleSheet.create({
   },
   eyeIcon: {
     padding: 15,
+  },
+  errorText: {
+    color: "#ff3f6c",
+    fontSize: 14,
+    marginBottom: 10,
+    textAlign: "center",
   },
   button: {
     backgroundColor: "#ff3f6c",

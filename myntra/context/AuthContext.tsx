@@ -1,6 +1,5 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import { getUserData, saveUserData, clearUserData } from "@/utils/storage";
-import React from "react";
 import axios from "axios";
 import BASE_URL from "@/config/api";
 
@@ -22,42 +21,62 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     email: string;
   } | null>(null);
 
+  // Restore session on app start
   useEffect(() => {
     (async () => {
-      const data = await getUserData();
-      if (data._id && data.name && data.email) {
-        setUser({ _id: data._id, name: data.name, email: data.email });
-        setIsAuthenticated(true);
+      try {
+        const data = await getUserData();
+        if (data._id && data.name && data.email) {
+          setUser({ _id: data._id, name: data.name, email: data.email });
+          setIsAuthenticated(true);
+        }
+      } catch (e) {
+        console.log("Session restore failed:", e);
       }
     })();
   }, []);
 
   const login = async (email: string, password: string) => {
-    const res = await axios.post(`${BASE_URL}/user/login`, { email, password });
+    const res = await axios.post(`${BASE_URL}/user/login`, {
+      email: email.trim().toLowerCase(),
+      password,
+    });
+
     const data = res.data.user;
-    if (data.fullName) {
-      await saveUserData(data._id, data.fullName, data.email);
-      setUser({ _id: data._id, name: data.fullName, email: data.email });
-      setIsAuthenticated(true);
-    } else {
-      throw new Error(data.message || "Login failed");
+
+    if (!data || !data._id) {
+      throw new Error("Invalid response from server");
     }
+
+    await saveUserData(data._id, data.fullName, data.email);
+    setUser({ _id: data._id, name: data.fullName, email: data.email });
+    setIsAuthenticated(true);
   };
 
   const Signup = async (fullName: string, email: string, password: string) => {
-    const res = await axios.post(`${BASE_URL}/user/signup`, { fullName, email, password });
+    const res = await axios.post(`${BASE_URL}/user/signup`, {
+      fullName,
+      email: email.trim().toLowerCase(),
+      password,
+    });
+
     const data = res.data.user;
-    if (data.fullName) {
-      await saveUserData(data._id, data.fullName, data.email);
-      setUser({ _id: data._id, name: data.fullName, email: data.email });
-      setIsAuthenticated(true);
-    } else {
-      throw new Error(data.message || "Signup failed");
+
+    if (!data || !data._id) {
+      throw new Error("Invalid response from server");
     }
+
+    await saveUserData(data._id, data.fullName, data.email);
+    setUser({ _id: data._id, name: data.fullName, email: data.email });
+    setIsAuthenticated(true);
   };
 
   const logout = async () => {
-    await clearUserData();
+    try {
+      await clearUserData();
+    } catch (e) {
+      console.log("Clear storage failed:", e);
+    }
     setUser(null);
     setIsAuthenticated(false);
   };
