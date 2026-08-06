@@ -31,6 +31,7 @@ export default function RootLayout() {
         <Stack.Screen name="product/[id]" />
         <Stack.Screen name="checkout" />
         <Stack.Screen name="orders" />
+        <Stack.Screen name="recently-viewed" />
       </Stack>
       <StatusBar style="auto" />
     </AuthProvider>

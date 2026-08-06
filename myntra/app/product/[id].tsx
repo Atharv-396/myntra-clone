@@ -15,6 +15,7 @@ import React from "react";
 import { useAuth } from "@/context/AuthContext";
 import axios from "axios";
 import BASE_URL from "@/config/api";
+import { trackProductView } from "@/utils/recentlyViewedService";
 
 // Mock product data - in a real app, this would come from an API
 // const products = {
@@ -101,6 +102,9 @@ export default function ProductDetails() {
         setIsLoading(true);
         const product = await axios.get(`${BASE_URL}/product/${id}`);
         setproduct(product.data);
+
+        // Track this product view ONLY after successfully loading the detail page
+        trackProductView(id as string, user?._id ?? null);
       } catch (error) {
         console.log(error);
         setIsLoading(false);

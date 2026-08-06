@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { getUserData, saveUserData, clearUserData } from "@/utils/storage";
 import axios from "axios";
 import BASE_URL from "@/config/api";
+import { mergeLocalHistoryAfterLogin } from "@/utils/recentlyViewedService";
 
 type AuthContextType = {
   isAuthenticated: boolean;
@@ -51,6 +52,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     await saveUserData(data._id, data.fullName, data.email);
     setUser({ _id: data._id, name: data.fullName, email: data.email });
     setIsAuthenticated(true);
+
+    // Merge any guest recently viewed history into MongoDB
+    mergeLocalHistoryAfterLogin(data._id).catch(() => {});
   };
 
   const Signup = async (fullName: string, email: string, password: string) => {
@@ -69,6 +73,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     await saveUserData(data._id, data.fullName, data.email);
     setUser({ _id: data._id, name: data.fullName, email: data.email });
     setIsAuthenticated(true);
+
+    // Merge any guest recently viewed history into MongoDB
+    mergeLocalHistoryAfterLogin(data._id).catch(() => {});
   };
 
   const logout = async () => {

@@ -14,6 +14,7 @@ const productrouter = require("./routes/Productroutes");
 const Bagroutes = require("./routes/Bagroutes");
 const Wishlistroutes = require("./routes/Wishlistroutes");
 const OrderRoutes = require("./routes/OrderRoutes");
+const RecentlyViewedRoutes = require("./routes/RecentlyViewedRoutes");
 
 const app = express();
 app.use(express.json());
@@ -28,7 +29,8 @@ app.use("/category", categoryrouter);
 app.use("/product", productrouter);
 app.use("/bag", Bagroutes);
 app.use("/wishlist", Wishlistroutes);
-app.use("/order", OrderRoutes); // lowercase — consistent with frontend calls
+app.use("/order", OrderRoutes);
+app.use("/recently-viewed", RecentlyViewedRoutes);
 
 mongoose
   .connect(process.env.MONGO_URI)
