@@ -13,6 +13,8 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import axios from "axios";
 import BASE_URL from "@/config/api";
+import RecentlyViewedSection from "@/components/RecentlyViewedSection";
+import ContinueShoppingSection from "@/components/ContinueShoppingSection";
 
 // const categories = [
 //   {
@@ -102,11 +104,7 @@ export default function Home() {
   const [categories, setcategories] = useState<any>(null);
   const { user } = useAuth();
   const handleProductPress = (productId: number) => {
-    if (!user) {
-      router.push("/login");
-    } else {
-      router.push(`/product/${productId}`);
-    }
+    router.push(`/product/${productId}`);
   };
   useEffect(() => {
     const fetchproduct = async () => {
@@ -195,6 +193,12 @@ export default function Home() {
           ))}
         </ScrollView>
       </View>
+
+      {/* Recently Viewed — shown to all users (guests see locally stored, logged-in see MongoDB) */}
+      <RecentlyViewedSection />
+
+      {/* Continue Shopping — logged-in users only, shows viewed but not purchased */}
+      <ContinueShoppingSection />
 
       <View style={styles.section}>
         <View style={styles.sectionHeader}>

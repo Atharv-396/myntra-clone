@@ -15,6 +15,7 @@ import {
   Settings,
   LogOut,
   ChevronRight,
+  Clock,
 } from "lucide-react-native";
 import React from "react";
 import { useAuth } from "@/context/AuthContext";
@@ -22,6 +23,7 @@ import { useAuth } from "@/context/AuthContext";
 const menuItems = [
   { icon: Package, label: "Orders", route: "/orders" },
   { icon: Heart, label: "Wishlist", route: "/wishlist" },
+  { icon: Clock, label: "Recently Viewed", route: "/recently-viewed" },
   { icon: CreditCard, label: "Payment Methods", route: "/payments" },
   { icon: MapPin, label: "Addresses", route: "/addresses" },
   { icon: Settings, label: "Settings", route: "/settings" },
