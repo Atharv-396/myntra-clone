@@ -16,6 +16,8 @@ import { useAuth } from "@/context/AuthContext";
 import axios from "axios";
 import BASE_URL from "@/config/api";
 import { trackProductView } from "@/utils/recentlyViewedService";
+import { addToCart } from "@/utils/cartService";
+import { addToGuestCart } from "@/utils/guestCartStorage";
 
 // Mock product data - in a real app, this would come from an API
 // const products = {
@@ -164,31 +166,35 @@ export default function ProductDetails() {
     }
   };
   const handleAddToBag = async () => {
-    if (!user) {
-      router.push("/login");
-      return;
-    }
-
     if (!selectedSize) {
-      // In a real app, show a proper error message
       alert("Please select a size");
       return;
     }
     try {
       setLoading(true);
-      await axios.post(`${BASE_URL}/bag`, {
-        userId: user._id,
-        productId: id,
-        size: selectedSize,
-        quantity: 1,
-      });
+      if (user) {
+        // Logged-in: use server cart with upsert + price snapshot
+        await addToCart(user._id, id as string, selectedSize, "", 1);
+      } else {
+        // Guest: store locally
+        await addToGuestCart({
+          productId: id as string,
+          size: selectedSize,
+          color: "",
+          quantity: 1,
+          priceAtAdd: product.price,
+          productName: product.name,
+          productBrand: product.brand,
+          productImage: product.images?.[0] || "",
+          addedAt: new Date().toISOString(),
+        });
+      }
       router.push("/bag");
-    } catch (error) {
-      console.log(error);
+    } catch (error: any) {
+      alert(error?.response?.data?.message || "Could not add to bag");
     } finally {
       setLoading(false);
     }
-    // In a real app, this would add the item to the cart in your state management solution
   };
 
   const handleScroll = (event: any) => {

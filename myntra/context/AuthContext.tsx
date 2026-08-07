@@ -3,6 +3,7 @@ import { getUserData, saveUserData, clearUserData } from "@/utils/storage";
 import axios from "axios";
 import BASE_URL from "@/config/api";
 import { mergeLocalHistoryAfterLogin } from "@/utils/recentlyViewedService";
+import { mergeGuestCartAfterLogin } from "@/utils/cartService";
 
 type AuthContextType = {
   isAuthenticated: boolean;
@@ -55,6 +56,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Merge any guest recently viewed history into MongoDB
     mergeLocalHistoryAfterLogin(data._id).catch(() => {});
+    // Merge any guest cart items into MongoDB
+    mergeGuestCartAfterLogin(data._id).catch(() => {});
   };
 
   const Signup = async (fullName: string, email: string, password: string) => {
@@ -76,6 +79,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Merge any guest recently viewed history into MongoDB
     mergeLocalHistoryAfterLogin(data._id).catch(() => {});
+    // Merge any guest cart items into MongoDB
+    mergeGuestCartAfterLogin(data._id).catch(() => {});
   };
 
   const logout = async () => {
