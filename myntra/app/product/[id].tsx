@@ -18,6 +18,7 @@ import BASE_URL from "@/config/api";
 import { trackProductView } from "@/utils/recentlyViewedService";
 import { addToCart } from "@/utils/cartService";
 import { addToGuestCart } from "@/utils/guestCartStorage";
+import YouMayAlsoLikeSection from "@/components/YouMayAlsoLikeSection";
 
 // Mock product data - in a real app, this would come from an API
 // const products = {
@@ -301,6 +302,13 @@ export default function ProductDetails() {
             </View>
           </View>
         </View>
+
+        {/* You May Also Like — shown below product details, never blocks main content */}
+        <YouMayAlsoLikeSection
+          currentProductId={id as string}
+          userId={user?._id}
+          limit={10}
+        />
       </ScrollView>
 
       <View style={styles.footer}>

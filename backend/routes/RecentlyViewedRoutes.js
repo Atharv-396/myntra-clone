@@ -4,7 +4,7 @@ const RecentlyViewed = require("../models/RecentlyViewed");
 const Order = require("../models/Order");
 const router = express.Router();
 
-const MAX_HISTORY = 20;
+const MAX_HISTORY = 50; // extended from 20 to support recommendation engine
 
 // POST /recently-viewed
 // Add a product to recently viewed. Handles:

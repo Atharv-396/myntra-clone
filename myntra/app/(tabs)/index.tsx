@@ -15,6 +15,7 @@ import axios from "axios";
 import BASE_URL from "@/config/api";
 import RecentlyViewedSection from "@/components/RecentlyViewedSection";
 import ContinueShoppingSection from "@/components/ContinueShoppingSection";
+import YouMayAlsoLikeSection from "@/components/YouMayAlsoLikeSection";
 
 // const categories = [
 //   {
@@ -199,6 +200,9 @@ export default function Home() {
 
       {/* Continue Shopping — logged-in users only, shows viewed but not purchased */}
       <ContinueShoppingSection />
+
+      {/* You May Also Like — personalized for logged-in, popular fallback for guests */}
+      <YouMayAlsoLikeSection userId={user?._id} limit={10} />
 
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
