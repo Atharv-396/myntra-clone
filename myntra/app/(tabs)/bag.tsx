@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   View, Text, ScrollView, Image, TouchableOpacity,
   StyleSheet, ActivityIndicator, Alert, RefreshControl,
@@ -27,7 +27,26 @@ export default function Bag() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [priceChanges, setPriceChanges] = useState<PriceChange[]>([]);
   const [stockWarnings, setStockWarnings] = useState<StockWarning[]>([]);
-  const [totals, setTotals] = useState<CartTotals | null>(null);
+
+  // ── Derived totals — recalculates automatically whenever cartItems changes ──
+  // This is the fix: totals are derived from cartItems state, not stored
+  // separately. Every quantity change, delete, or move instantly updates totals.
+  const totals: CartTotals | null = useMemo(() => {
+    if (cartItems.length === 0) return null;
+    const activeItems = cartItems.filter((i) => !i.unavailable);
+    const subtotal = activeItems.reduce(
+      (s, i) => s + (i.productId?.price || 0) * i.quantity,
+      0
+    );
+    const shipping = subtotal > 0 && subtotal < 999 ? 99 : 0;
+    return {
+      subtotal,
+      shipping,
+      grandTotal: subtotal + shipping,
+      itemCount: activeItems.reduce((s, i) => s + i.quantity, 0),
+      priceChanges: [],
+    };
+  }, [cartItems]);
 
   // ── Load cart ──────────────────────────────────────────────────────────────
   const loadCart = useCallback(async () => {
@@ -37,12 +56,7 @@ export default function Bag() {
         const items = await fetchCart(user._id);
         setCartItems(items.filter((i) => !i.savedForLater));
         setSavedItems(items.filter((i) => i.savedForLater));
-        // Calculate totals
-        const subtotal = items
-          .filter((i) => !i.savedForLater && !i.unavailable)
-          .reduce((s, i) => s + (i.productId?.price || 0) * i.quantity, 0);
-        const shipping = subtotal > 0 && subtotal < 999 ? 99 : 0;
-        setTotals({ subtotal, shipping, grandTotal: subtotal + shipping, itemCount: items.filter(i=>!i.savedForLater).length, priceChanges: [] });
+        // Totals are now derived via useMemo — no manual calculation needed here
       } catch (e) {
         console.log("loadCart error:", e);
       } finally {
@@ -115,7 +129,7 @@ export default function Bag() {
         if (!user) return;
         await clearCart(user._id);
         setCartItems([]);
-        setTotals(null);
+        // totals automatically becomes null via useMemo when cartItems is empty
       }},
     ]);
   };
