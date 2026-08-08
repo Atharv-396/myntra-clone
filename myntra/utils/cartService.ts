@@ -119,6 +119,36 @@ export const clearCart = async (userId: string): Promise<void> => {
   await axios.delete(`${BASE_URL}/bag/clear/${userId}`);
 };
 
+/** Fetch validated checkout summary from backend (single source of truth for checkout pricing) */
+export interface CheckoutSummary {
+  canCheckout: boolean;
+  items: {
+    _id: string;
+    productId: string;
+    name: string;
+    brand: string;
+    image: string;
+    size: string;
+    color: string;
+    quantity: number;
+    unitPrice: number;
+    lineTotal: number;
+  }[];
+  subtotal: number;
+  shipping: number;
+  tax: number;
+  taxRate: number;
+  grandTotal: number;
+  priceChanges: PriceChange[];
+  warnings: StockWarning[];
+  invalidItems: InvalidItem[];
+}
+
+export const fetchCheckoutSummary = async (userId: string): Promise<CheckoutSummary> => {
+  const res = await axios.get(`${BASE_URL}/order/checkout-summary/${userId}`);
+  return res.data;
+};
+
 /** Move cart item to Save for Later */
 export const saveForLater = async (itemId: string): Promise<CartItem> => {
   const res = await axios.post(`${BASE_URL}/bag/save-for-later/${itemId}`);
