@@ -203,7 +203,7 @@ async function getRecommendations(userId, currentProductId, limit = DEFAULT_LIMI
   // ── Fetch all active, in-stock candidates in ONE query ───────────────────
   const candidates = await Product.find({
     active: { $ne: false },
-    stock: { $gt: 0 },
+    $or: [{ stock: { $gt: 0 } }, { stock: { $exists: false } }],
   })
     .select("_id name brand price discount images stock active createdAt")
     .lean();
@@ -261,7 +261,7 @@ async function getFallbackRecommendations(currentProductId, limit = DEFAULT_LIMI
 
   const query = {
     active: { $ne: false },
-    stock: { $gt: 0 },
+    $or: [{ stock: { $gt: 0 } }, { stock: { $exists: false } }],
   };
   if (currentProductId && mongoose.Types.ObjectId.isValid(currentProductId)) {
     query._id = { $ne: new mongoose.Types.ObjectId(currentProductId) };
