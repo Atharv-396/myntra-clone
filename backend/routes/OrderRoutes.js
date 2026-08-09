@@ -3,6 +3,8 @@ const Bag = require("../models/Bag");
 const Order = require("../models/Order");
 const router = express.Router();
 const mongoose = require("mongoose");
+const { sendNotification } = require("../services/notificationService");
+const { NOTIFICATION_CATEGORIES, NOTIFICATION_TYPES } = require("../constants/notificationTypes");
 
 // Tax rate — centralized, single source of truth
 const GST_RATE = 0.18; // 18% GST
@@ -185,6 +187,18 @@ router.post("/create/:userId", async (req, res) => {
     await newOrder.save();
     // Clear only in-cart items, not saved-for-later
     await Bag.deleteMany({ userId: userid, savedForLater: false });
+
+    // Fire order confirmed notification (non-blocking)
+    sendNotification({
+      userId: userid,
+      category: NOTIFICATION_CATEGORIES.ORDER,
+      type: NOTIFICATION_TYPES.ORDER_CONFIRMED,
+      title: "Order Confirmed 🎉",
+      body: `Your order has been confirmed.`,
+      data: { type: "ORDER_CONFIRMED", category: "ORDER", orderId: newOrder._id.toString() },
+      idempotencyKey: `order_confirmed:${newOrder._id}`,
+    }).catch(() => {});
+
     res.status(200).json({ message: "Order placed successfully", orderId: newOrder._id, total });
   } catch (error) {
     console.log("POST /order/create error:", error);
@@ -201,6 +215,58 @@ router.get("/user/:userid", async (req, res) => {
     res.status(200).json(order);
   } catch (error) {
     console.log("GET /order/user error:", error);
+    return res.status(500).json({ message: "Something went wrong" });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PATCH /order/:orderId/status — update order status and trigger notification
+// Body: { status } — e.g. "Shipped", "Out for Delivery", "Delivered"
+// ─────────────────────────────────────────────────────────────────────────────
+router.patch("/:orderId/status", async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { status } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(orderId))
+      return res.status(400).json({ message: "Invalid orderId" });
+    if (!status)
+      return res.status(400).json({ message: "status is required" });
+
+    const order = await Order.findByIdAndUpdate(
+      orderId,
+      { status, "tracking.status": status },
+      { new: true }
+    );
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    // Map status string → notification type
+    const STATUS_TO_NOTIF = {
+      "Processing":       null,
+      "Packed":           { type: NOTIFICATION_TYPES.ORDER_PACKED,     cat: NOTIFICATION_CATEGORIES.SHIPPING, title: "Order Packed 📦", body: `Your order is being packed.` },
+      "Shipped":          { type: NOTIFICATION_TYPES.ORDER_SHIPPED,    cat: NOTIFICATION_CATEGORIES.SHIPPING, title: "Order Shipped 🚚", body: `Your order is on its way!` },
+      "In Transit":       { type: NOTIFICATION_TYPES.ORDER_IN_TRANSIT, cat: NOTIFICATION_CATEGORIES.SHIPPING, title: "Order In Transit 🛣️", body: `Your order is in transit.` },
+      "Out for Delivery": { type: NOTIFICATION_TYPES.OUT_FOR_DELIVERY, cat: NOTIFICATION_CATEGORIES.DELIVERY, title: "Out for Delivery 📦", body: `Your order is out for delivery today!` },
+      "Delivered":        { type: NOTIFICATION_TYPES.ORDER_DELIVERED,  cat: NOTIFICATION_CATEGORIES.DELIVERY, title: "Order Delivered 🎉", body: `Your order has been delivered.` },
+      "Cancelled":        { type: NOTIFICATION_TYPES.ORDER_CANCELLED,  cat: NOTIFICATION_CATEGORIES.ORDER,    title: "Order Cancelled", body: `Your order has been cancelled.` },
+    };
+
+    const notif = STATUS_TO_NOTIF[status];
+    if (notif) {
+      sendNotification({
+        userId: order.userId.toString(),
+        category: notif.cat,
+        type: notif.type,
+        title: notif.title,
+        body: notif.body,
+        data: { type: notif.type, category: notif.cat, orderId: orderId },
+        idempotencyKey: `${notif.type.toLowerCase()}:${orderId}`,
+      }).catch(() => {});
+    }
+
+    return res.status(200).json({ message: "Order status updated", status });
+  } catch (error) {
+    console.log("PATCH /order/:orderId/status error:", error);
     return res.status(500).json({ message: "Something went wrong" });
   }
 });

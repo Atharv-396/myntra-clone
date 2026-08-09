@@ -4,6 +4,7 @@ import axios from "axios";
 import BASE_URL from "@/config/api";
 import { mergeLocalHistoryAfterLogin } from "@/utils/recentlyViewedService";
 import { mergeGuestCartAfterLogin } from "@/utils/cartService";
+import { initializeNotifications, deregisterDevice } from "@/utils/notificationService";
 
 type AuthContextType = {
   isAuthenticated: boolean;
@@ -58,6 +59,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     mergeLocalHistoryAfterLogin(data._id).catch(() => {});
     // Merge any guest cart items into MongoDB
     mergeGuestCartAfterLogin(data._id).catch(() => {});
+    // Initialize push notifications for this device
+    initializeNotifications(data._id).catch(() => {});
   };
 
   const Signup = async (fullName: string, email: string, password: string) => {
@@ -81,10 +84,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     mergeLocalHistoryAfterLogin(data._id).catch(() => {});
     // Merge any guest cart items into MongoDB
     mergeGuestCartAfterLogin(data._id).catch(() => {});
+    // Initialize push notifications for this device
+    initializeNotifications(data._id).catch(() => {});
   };
 
   const logout = async () => {
     try {
+      // Deregister push device before clearing user data
+      const data = await getUserData();
+      if (data._id) {
+        deregisterDevice(data._id).catch(() => {});
+      }
       await clearUserData();
     } catch (e) {
       console.log("Clear storage failed:", e);

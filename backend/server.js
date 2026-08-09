@@ -16,6 +16,7 @@ const Wishlistroutes = require("./routes/Wishlistroutes");
 const OrderRoutes = require("./routes/OrderRoutes");
 const RecentlyViewedRoutes = require("./routes/RecentlyViewedRoutes");
 const RecommendationRoutes = require("./routes/RecommendationRoutes");
+const NotificationRoutes = require("./routes/NotificationRoutes");
 
 const app = express();
 app.use(express.json());
@@ -33,6 +34,7 @@ app.use("/wishlist", Wishlistroutes);
 app.use("/order", OrderRoutes);
 app.use("/recently-viewed", RecentlyViewedRoutes);
 app.use("/recommendations", RecommendationRoutes);
+app.use("/api/notifications", NotificationRoutes);
 
 mongoose
   .connect(process.env.MONGO_URI)
