@@ -16,7 +16,7 @@
         "foregroundImage": "./assets/images/myntra.jpg",
         "backgroundColor": "#ffffff"
       },
-      "googleServicesFile": "./google-services.json",
+      "package": "com.mratharv.myntra",
       "permissions": ["NOTIFICATIONS", "RECEIVE_BOOT_COMPLETED", "VIBRATE"]
     },
     "web": {
