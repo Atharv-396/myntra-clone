@@ -88,6 +88,14 @@ export async function getExpoPushToken(): Promise<string | null> {
       return null;
     }
 
+    // Expo Go does not support remote push notifications from SDK 53+
+    // Skip silently to avoid the warning — use a development build for real push notifications
+    const isExpoGo = Constants.appOwnership === "expo";
+    if (isExpoGo) {
+      console.log("[Notifications] Expo Go detected — skipping push registration. Use a dev build for real notifications.");
+      return null;
+    }
+
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
 
