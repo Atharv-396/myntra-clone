@@ -7,7 +7,7 @@
     "icon": "./assets/images/myntra.jpg",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true
     },
@@ -40,7 +40,6 @@
         {
           "icon": "./assets/images/myntra.jpg",
           "color": "#ff3f6c",
-          "sounds": [],
           "androidMode": "default",
           "androidCollapsedTitle": "Myntra"
         }
