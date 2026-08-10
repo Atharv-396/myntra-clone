@@ -1,8 +1,8 @@
-import { useAuth } from "@/context/AuthContext";
+﻿import { useAuth } from "@/context/AuthContext";
 import axios from "axios";
 import BASE_URL from "@/config/api";
 import { useRouter } from "expo-router";
-import { CreditCard, MapPin, Truck, AlertCircle } from "lucide-react-native";
+import { CreditCard, MapPin, Truck, CircleAlert } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
   View, Text, StyleSheet, ScrollView, TextInput,
@@ -30,7 +30,7 @@ export default function Checkout() {
         // Show price change alert if backend detected any
         if (data.priceChanges.length > 0) {
           const changes = data.priceChanges
-            .map((p) => `• ${p.productName}: ₹${p.oldPrice} → ₹${p.newPrice}`)
+            .map((p) => `â€¢ ${p.productName}: â‚¹${p.oldPrice} â†’ â‚¹${p.newPrice}`)
             .join("\n");
           Alert.alert("Price Updated", `Some prices have changed:\n\n${changes}\n\nCheckout total has been updated.`);
         }
@@ -123,7 +123,7 @@ export default function Checkout() {
           </View>
         </View>
 
-        {/* Order Summary — live from backend */}
+        {/* Order Summary â€” live from backend */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Truck size={24} color="#ff3f6c" />
@@ -134,7 +134,7 @@ export default function Checkout() {
             <ActivityIndicator size="small" color="#ff3f6c" style={{ marginVertical: 20 }} />
           ) : summaryError ? (
             <View style={styles.errorBox}>
-              <AlertCircle size={18} color="#cc0000" />
+              <CircleAlert size={18} color="#cc0000" />
               <Text style={styles.errorBoxText}>{summaryError}</Text>
             </View>
           ) : summary ? (
@@ -142,7 +142,7 @@ export default function Checkout() {
               {/* Invalid items warning */}
               {summary.invalidItems.length > 0 && (
                 <View style={styles.warningBox}>
-                  <AlertCircle size={16} color="#856404" />
+                  <CircleAlert size={16} color="#856404" />
                   <Text style={styles.warningText}>
                     {summary.invalidItems.map((i) => i.productName).join(", ")} {summary.invalidItems.length === 1 ? "is" : "are"} unavailable
                   </Text>
@@ -152,7 +152,7 @@ export default function Checkout() {
               {/* Stock warnings */}
               {summary.warnings.length > 0 && (
                 <View style={styles.warningBox}>
-                  <AlertCircle size={16} color="#856404" />
+                  <CircleAlert size={16} color="#856404" />
                   <Text style={styles.warningText}>
                     {summary.warnings.map((w) => w.message).join(". ")}
                   </Text>
@@ -163,10 +163,10 @@ export default function Checkout() {
               {summary.items.map((item) => (
                 <View key={item._id} style={styles.lineItem}>
                   <Text style={styles.lineItemName} numberOfLines={1}>
-                    {item.brand} {item.name} × {item.quantity}
+                    {item.brand} {item.name} Ã— {item.quantity}
                     {item.size ? ` (${item.size})` : ""}
                   </Text>
-                  <Text style={styles.lineItemPrice}>₹{item.lineTotal}</Text>
+                  <Text style={styles.lineItemPrice}>â‚¹{item.lineTotal}</Text>
                 </View>
               ))}
 
@@ -175,21 +175,21 @@ export default function Checkout() {
               {/* Totals */}
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Subtotal</Text>
-                <Text style={styles.summaryValue}>₹{summary.subtotal}</Text>
+                <Text style={styles.summaryValue}>â‚¹{summary.subtotal}</Text>
               </View>
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Shipping</Text>
                 <Text style={styles.summaryValue}>
-                  {summary.shipping === 0 ? "FREE" : `₹${summary.shipping}`}
+                  {summary.shipping === 0 ? "FREE" : `â‚¹${summary.shipping}`}
                 </Text>
               </View>
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>GST ({Math.round(summary.taxRate * 100)}%)</Text>
-                <Text style={styles.summaryValue}>₹{summary.tax}</Text>
+                <Text style={styles.summaryValue}>â‚¹{summary.tax}</Text>
               </View>
               <View style={[styles.summaryRow, styles.totalRow]}>
                 <Text style={styles.totalLabel}>Total Payable</Text>
-                <Text style={styles.totalValue}>₹{summary.grandTotal}</Text>
+                <Text style={styles.totalValue}>â‚¹{summary.grandTotal}</Text>
               </View>
             </>
           ) : null}

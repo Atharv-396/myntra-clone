@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Chrome, Heart, Search, ShoppingBag, User } from 'lucide-react-native';
+import { Globe, Heart, Search, ShoppingBag, User } from 'lucide-react-native';
 export default function TabLayout() {
   return (
     <Tabs
@@ -13,7 +13,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color ,size}) => <Chrome size={size} color={color}/>,
+          tabBarIcon: ({ color ,size}) => <Globe size={size} color={color}/>,
         }}
       />
       <Tabs.Screen
