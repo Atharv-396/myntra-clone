@@ -7,12 +7,18 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "android": {
+        "image": "latest"
+      },
       "env": {
         "EAS_SKIP_AUTO_FINGERPRINT": "1"
       }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "android": {
+        "image": "latest"
+      }
     },
     "production": {
       "autoIncrement": true
