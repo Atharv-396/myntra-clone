@@ -4,7 +4,7 @@
     "slug": "myntra",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/myntra.jpg",
+    "icon": "./assets/images/icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -13,7 +13,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/myntra.jpg",
+        "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.mratharv.myntra",
@@ -28,7 +28,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/myntra.jpg",
+          "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
@@ -38,7 +38,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/myntra.jpg",
+          "icon": "./assets/images/adaptive-icon.png",
           "color": "#ff3f6c",
           "androidMode": "default",
           "androidCollapsedTitle": "Myntra"
