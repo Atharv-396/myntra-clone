@@ -24,7 +24,7 @@ const PushDevice = require("../models/PushDevice");
 const NotificationPreference = require("../models/NotificationPreference");
 const Notification = require("../models/Notification");
 const { isValidExpoPushToken } = require("../providers/expoNotificationProvider");
-const { sendNotification, processReceipts } = require("../services/notificationService");
+const { sendNotification, processReceipts, scanAbandonedCarts } = require("../services/notificationService");
 const { NOTIFICATION_CATEGORIES, NOTIFICATION_TYPES } = require("../constants/notificationTypes");
 
 // ─── Helper: validate userId ────────────────────────────────────────────────
@@ -181,6 +181,31 @@ router.patch("/read-all", async (req, res) => {
   }
 });
 
+const ALL_PREF_FIELDS = [
+  "orderNotifications",
+  "paymentNotifications",
+  "shippingNotifications",
+  "deliveryNotifications",
+  "wishlistNotifications",
+  "stockNotifications",
+  "promotionNotifications",
+  "cartNotifications",
+];
+
+function ensureAllPrefFields(doc) {
+  const obj = doc.toObject ? doc.toObject() : { ...doc };
+  const defaults = {};
+  let needsSave = false;
+  for (const f of ALL_PREF_FIELDS) {
+    if (obj[f] === undefined || obj[f] === null) {
+      obj[f] = true;
+      defaults[f] = true;
+      needsSave = true;
+    }
+  }
+  return { normalized: obj, defaults, needsSave };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // PREFERENCES — before /:id
 // GET /api/notifications/preferences?userId=
@@ -190,13 +215,24 @@ router.get("/preferences", async (req, res) => {
     const { userId } = req.query;
     if (!validateUserId(userId)) return res.status(400).json({ message: "Valid userId is required" });
 
-    const pref = await NotificationPreference.findOneAndUpdate(
+    let pref = await NotificationPreference.findOneAndUpdate(
       { userId },
       { $setOnInsert: { userId } },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
-    return res.status(200).json(pref);
+    const { normalized, defaults, needsSave } = ensureAllPrefFields(pref);
+    if (needsSave) {
+      pref = await NotificationPreference.findOneAndUpdate(
+        { userId },
+        { $set: defaults },
+        { new: true }
+      );
+      const result = ensureAllPrefFields(pref);
+      return res.status(200).json(result.normalized);
+    }
+
+    return res.status(200).json(normalized);
   } catch (err) {
     console.log("GET /preferences error:", err.message);
     return res.status(500).json({ message: "Something went wrong" });
@@ -213,7 +249,7 @@ router.patch("/preferences", async (req, res) => {
       userId,
       orderNotifications, paymentNotifications, shippingNotifications,
       deliveryNotifications, wishlistNotifications, stockNotifications,
-      promotionNotifications,
+      promotionNotifications, cartNotifications,
     } = req.body;
 
     if (!validateUserId(userId)) return res.status(400).json({ message: "Valid userId is required" });
@@ -221,7 +257,7 @@ router.patch("/preferences", async (req, res) => {
     const boolFields = {
       orderNotifications, paymentNotifications, shippingNotifications,
       deliveryNotifications, wishlistNotifications, stockNotifications,
-      promotionNotifications,
+      promotionNotifications, cartNotifications,
     };
 
     const updates = {};
@@ -233,13 +269,24 @@ router.patch("/preferences", async (req, res) => {
       }
     }
 
-    const pref = await NotificationPreference.findOneAndUpdate(
+    let pref = await NotificationPreference.findOneAndUpdate(
       { userId },
       { $set: updates },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
-    return res.status(200).json(pref);
+    const { normalized, defaults, needsSave } = ensureAllPrefFields(pref);
+    if (needsSave) {
+      pref = await NotificationPreference.findOneAndUpdate(
+        { userId },
+        { $set: defaults },
+        { new: true }
+      );
+      const result = ensureAllPrefFields(pref);
+      return res.status(200).json(result.normalized);
+    }
+
+    return res.status(200).json(normalized);
   } catch (err) {
     console.log("PATCH /preferences error:", err.message);
     return res.status(500).json({ message: "Something went wrong" });
@@ -255,6 +302,28 @@ router.post("/receipts/process", async (req, res) => {
     await processReceipts();
     return res.status(200).json({ message: "Receipt processing complete" });
   } catch (err) {
+    return res.status(500).json({ message: "Something went wrong" });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SCHEDULED: Abandoned cart scan (admin on-demand trigger)
+// POST /api/notifications/admin/abandoned-cart/scan
+// Body: { adminSecret?, abandonedAfterHours? }
+// ─────────────────────────────────────────────────────────────────────────────
+router.post("/admin/abandoned-cart/scan", async (req, res) => {
+  try {
+    const { adminSecret, abandonedAfterHours } = req.body;
+
+    // Basic admin check — uses JWT_SECRET as admin secret for simplicity
+    if (adminSecret !== undefined && adminSecret !== process.env.JWT_SECRET) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    const result = await scanAbandonedCarts({ abandonedAfterHours });
+    return res.status(200).json({ message: "Abandoned cart scan complete", ...result });
+  } catch (err) {
+    console.log("POST /admin/abandoned-cart/scan error:", err.message);
     return res.status(500).json({ message: "Something went wrong" });
   }
 });

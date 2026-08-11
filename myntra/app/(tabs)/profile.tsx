@@ -27,15 +27,13 @@ const menuItems = [
   { icon: Bell, label: "Notifications", route: "/notifications" },
   { icon: Clock, label: "Recently Viewed", route: "/recently-viewed" },
   { icon: Settings, label: "Notification Settings", route: "/notification-settings" },
-  { icon: CreditCard, label: "Payment Methods", route: "/payments" },
-  { icon: MapPin, label: "Addresses", route: "/addresses" },
 ];
 
 export default function Profile() {
   const router = useRouter();
   const { user, logout } = useAuth();
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    await logout();
     router.replace("/");
   };
 

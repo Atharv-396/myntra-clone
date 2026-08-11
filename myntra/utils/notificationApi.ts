@@ -27,6 +27,30 @@ export interface NotificationPrefs {
   wishlistNotifications: boolean;
   stockNotifications: boolean;
   promotionNotifications: boolean;
+  cartNotifications: boolean;
+}
+
+const DEFAULT_PREFS: NotificationPrefs = {
+  orderNotifications: true,
+  paymentNotifications: true,
+  shippingNotifications: true,
+  deliveryNotifications: true,
+  wishlistNotifications: true,
+  stockNotifications: true,
+  promotionNotifications: true,
+  cartNotifications: true,
+};
+
+function normalizePrefs(raw: Partial<NotificationPrefs> | null | undefined): NotificationPrefs {
+  const out: NotificationPrefs = { ...DEFAULT_PREFS };
+  if (raw && typeof raw === "object") {
+    for (const k of Object.keys(DEFAULT_PREFS) as (keyof NotificationPrefs)[]) {
+      if (typeof raw[k] === "boolean") {
+        out[k] = raw[k] as boolean;
+      }
+    }
+  }
+  return out;
 }
 
 export const fetchNotifications = async (
@@ -63,7 +87,7 @@ export const fetchPreferences = async (userId: string): Promise<NotificationPref
   const res = await axios.get(`${BASE_URL}/api/notifications/preferences`, {
     params: { userId },
   });
-  return res.data;
+  return normalizePrefs(res.data);
 };
 
 export const updatePreferences = async (
@@ -74,5 +98,5 @@ export const updatePreferences = async (
     userId,
     ...updates,
   });
-  return res.data;
+  return normalizePrefs(res.data);
 };

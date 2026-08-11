@@ -1,4 +1,4 @@
-﻿import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthContext";
 import axios from "axios";
 import BASE_URL from "@/config/api";
 import { useRouter } from "expo-router";
@@ -30,7 +30,7 @@ export default function Checkout() {
         // Show price change alert if backend detected any
         if (data.priceChanges.length > 0) {
           const changes = data.priceChanges
-            .map((p) => `â€¢ ${p.productName}: â‚¹${p.oldPrice} â†’ â‚¹${p.newPrice}`)
+            .map((p) => `• ${p.productName}: ₹${p.oldPrice} → ₹${p.newPrice}`)
             .join("\n");
           Alert.alert("Price Updated", `Some prices have changed:\n\n${changes}\n\nCheckout total has been updated.`);
         }
@@ -163,10 +163,10 @@ export default function Checkout() {
               {summary.items.map((item) => (
                 <View key={item._id} style={styles.lineItem}>
                   <Text style={styles.lineItemName} numberOfLines={1}>
-                    {item.brand} {item.name} Ã— {item.quantity}
+                    {item.brand} {item.name} × {item.quantity}
                     {item.size ? ` (${item.size})` : ""}
                   </Text>
-                  <Text style={styles.lineItemPrice}>â‚¹{item.lineTotal}</Text>
+                  <Text style={styles.lineItemPrice}>₹{item.lineTotal}</Text>
                 </View>
               ))}
 
@@ -175,21 +175,21 @@ export default function Checkout() {
               {/* Totals */}
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Subtotal</Text>
-                <Text style={styles.summaryValue}>â‚¹{summary.subtotal}</Text>
+                <Text style={styles.summaryValue}>₹{summary.subtotal}</Text>
               </View>
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>Shipping</Text>
                 <Text style={styles.summaryValue}>
-                  {summary.shipping === 0 ? "FREE" : `â‚¹${summary.shipping}`}
+                  {summary.shipping === 0 ? "FREE" : `₹${summary.shipping}`}
                 </Text>
               </View>
               <View style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>GST ({Math.round(summary.taxRate * 100)}%)</Text>
-                <Text style={styles.summaryValue}>â‚¹{summary.tax}</Text>
+                <Text style={styles.summaryValue}>₹{summary.tax}</Text>
               </View>
               <View style={[styles.summaryRow, styles.totalRow]}>
                 <Text style={styles.totalLabel}>Total Payable</Text>
-                <Text style={styles.totalValue}>â‚¹{summary.grandTotal}</Text>
+                <Text style={styles.totalValue}>₹{summary.grandTotal}</Text>
               </View>
             </>
           ) : null}

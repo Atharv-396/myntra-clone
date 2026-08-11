@@ -15,10 +15,9 @@ const NotificationPreferenceSchema = new mongoose.Schema(
     wishlistNotifications: { type: Boolean, default: true },
     stockNotifications:    { type: Boolean, default: true },
     promotionNotifications:{ type: Boolean, default: true },
+    cartNotifications:     { type: Boolean, default: true },
   },
   { timestamps: true }
 );
-
-NotificationPreferenceSchema.index({ userId: 1 });
 
 module.exports = mongoose.model("NotificationPreference", NotificationPreferenceSchema);

@@ -6,10 +6,12 @@
  */
 
 const mongoose = require("mongoose");
+const Bag = require("../models/Bag");
+const Product = require("../models/Product");
 const PushDevice = require("../models/PushDevice");
 const NotificationPreference = require("../models/NotificationPreference");
 const Notification = require("../models/Notification");
-const { TYPE_TO_PREFERENCE } = require("../constants/notificationTypes");
+const { TYPE_TO_PREFERENCE, NOTIFICATION_CATEGORIES, NOTIFICATION_TYPES } = require("../constants/notificationTypes");
 const { sendNotifications, getReceipts } = require("../providers/expoNotificationProvider");
 
 /**
@@ -210,4 +212,84 @@ async function processReceipts() {
   }
 }
 
-module.exports = { sendNotification, sendToMultipleUsers, processReceipts };
+async function scanAbandonedCarts(options = {}) {
+  try {
+    const abandonedAfterHours = Number(options.abandonedAfterHours) || 1;
+    const now = new Date();
+    const abandonedCutoff = new Date(now.getTime() - abandonedAfterHours * 60 * 60 * 1000);
+
+    if (abandonedAfterHours <= 0) {
+      throw new Error("abandonedAfterHours must be a positive number");
+    }
+
+    const distinctUserIds = await Bag.distinct("userId", {
+      savedForLater: false,
+      updatedAt: { $lte: abandonedCutoff },
+    });
+
+    const targetUserIds = [];
+    for (const userId of distinctUserIds) {
+      const activeDevices = await PushDevice.countDocuments({ userId, isActive: true });
+      if (activeDevices === 0) continue;
+
+      const recentOrder = await mongoose.models.Order?.findOne({ userId, createdAt: { $gte: abandonedCutoff } }).select("_id").lean();
+      if (recentOrder) continue;
+
+      const existingReminder = await Notification.countDocuments({
+        userId,
+        type: NOTIFICATION_TYPES.CART_ABANDONED,
+        createdAt: { $gte: abandonedCutoff },
+      });
+      if (existingReminder > 0) continue;
+
+      targetUserIds.push(userId.toString());
+    }
+
+    let sentCount = 0;
+    for (const userId of targetUserIds) {
+      const items = await Bag.find({ userId, savedForLater: false }).sort({ updatedAt: -1 }).limit(3).populate("productId").lean();
+      if (items.length === 0) continue;
+
+      const firstItem = items.find((i) => i.productId) || items[0];
+      const productName = firstItem.productId?.name || "your items";
+      const grandTotal = items.reduce((sum, i) => {
+        const price = Number(i.priceAtAdd || i.productId?.price || 0);
+        const qty = Number(i.quantity || 1);
+        return sum + price * qty;
+      }, 0);
+
+      let body = `You left ${items.length} item${items.length > 1 ? "s" : ""} in your bag. Checkout before they sell out!`;
+      if (grandTotal > 0) {
+        body = `You left items worth ₹${grandTotal} in your bag. Complete your order now.`;
+      }
+
+      await sendNotification({
+        userId,
+        category: NOTIFICATION_CATEGORIES.CART,
+        type: NOTIFICATION_TYPES.CART_ABANDONED,
+        title: "Your bag is waiting for you",
+        body,
+        data: {
+          type: NOTIFICATION_TYPES.CART_ABANDONED,
+          category: NOTIFICATION_CATEGORIES.CART,
+          productId: firstItem.productId?._id?.toString() || "",
+        },
+        idempotencyKey: `cart_abandoned:${userId}:${Math.floor(abandonedCutoff.getTime() / 3600000)}`,
+      });
+      sentCount += 1;
+    }
+
+    return {
+      scannedAt: now.toISOString(),
+      abandonedAfterHours,
+      scannedUsers: distinctUserIds.length,
+      eligibleUsers: targetUserIds.length,
+      notificationsSent: sentCount,
+    };
+  } catch (err) {
+    console.log("[Notification] scanAbandonedCarts error:", err.message);
+    throw err;
+  }
+}
+
+module.exports = { sendNotification, sendToMultipleUsers, processReceipts, scanAbandonedCarts };

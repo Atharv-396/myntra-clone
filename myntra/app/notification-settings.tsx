@@ -11,13 +11,14 @@ import { fetchPreferences, updatePreferences, NotificationPrefs } from "@/utils/
 type PrefKey = keyof NotificationPrefs;
 
 const SETTINGS: { key: PrefKey; label: string; description: string }[] = [
-  { key: "orderNotifications",    label: "Orders",       description: "Order confirmations and updates" },
-  { key: "paymentNotifications",  label: "Payments",     description: "Payment and refund updates" },
-  { key: "shippingNotifications", label: "Shipping",     description: "Shipping progress updates" },
-  { key: "deliveryNotifications", label: "Delivery",     description: "Delivery status updates" },
-  { key: "wishlistNotifications", label: "Wishlist",     description: "Wishlist price-drop alerts" },
-  { key: "stockNotifications",    label: "Back in Stock",description: "Product availability alerts" },
-  { key: "promotionNotifications",label: "Promotions",   description: "Sales and promotional campaigns" },
+  { key: "orderNotifications",    label: "Orders",              description: "Order confirmations and updates" },
+  { key: "paymentNotifications",  label: "Payments",            description: "Payment and refund updates" },
+  { key: "shippingNotifications", label: "Shipping",            description: "Shipping progress updates" },
+  { key: "deliveryNotifications", label: "Delivery",            description: "Delivery status updates" },
+  { key: "wishlistNotifications", label: "Wishlist",            description: "Wishlist price-drop alerts" },
+  { key: "stockNotifications",    label: "Back in Stock",       description: "Product availability alerts" },
+  { key: "promotionNotifications",label: "Promotions",          description: "Sales and promotional campaigns" },
+  { key: "cartNotifications",     label: "Cart Reminders",      description: "Abandoned cart reminders and bag nudges" },
 ];
 
 export default function NotificationSettingsScreen() {

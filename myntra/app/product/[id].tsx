@@ -93,20 +93,17 @@ export default function ProductDetails() {
   const [isLoading, setIsLoading] = useState(true);
   const [loading, setLoading] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
-  const autoScrollTimer = useRef<NodeJS.Timeout>();
+  const autoScrollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const { user } = useAuth();
   const [product, setproduct] = useState<any>(null);
   const [iswishlist, setiswishlist] = useState(false);
   useEffect(() => {
-    // Simulate loading time
-
     const fetchproduct = async () => {
       try {
         setIsLoading(true);
-        const product = await axios.get(`${BASE_URL}/product/${id}`);
-        setproduct(product.data);
+        const fetched = await axios.get(`${BASE_URL}/product/${id}`);
+        setproduct(fetched.data);
 
-        // Track this product view ONLY after successfully loading the detail page
         trackProductView(id as string, user?._id ?? null);
       } catch (error) {
         console.log(error);
@@ -116,21 +113,23 @@ export default function ProductDetails() {
       }
     };
     fetchproduct();
-  }, []);
+  }, [id, user?._id]);
 
   useEffect(() => {
-    // Start auto-scroll
-    startAutoScroll();
+    if (!product) return;
+    const timer = startAutoScroll();
+    autoScrollTimer.current = timer;
 
     return () => {
       if (autoScrollTimer.current) {
         clearInterval(autoScrollTimer.current);
+        autoScrollTimer.current = null;
       }
     };
-  }, []);
+  }, [product, currentImageIndex, width]);
 
-  const startAutoScroll = () => {
-    autoScrollTimer.current = setInterval(() => {
+  const startAutoScroll = (): ReturnType<typeof setInterval> => {
+    return setInterval(() => {
       if (product && scrollViewRef.current) {
         const nextIndex = (currentImageIndex + 1) % product.images.length;
         scrollViewRef.current.scrollTo({
@@ -206,8 +205,8 @@ export default function ProductDetails() {
     // Reset auto-scroll timer when user manually scrolls
     if (autoScrollTimer.current) {
       clearInterval(autoScrollTimer.current);
-      startAutoScroll();
     }
+    autoScrollTimer.current = startAutoScroll();
   };
 
   if (isLoading) {

@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
   quantityContainer: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
   quantityButton: { width: 28, height: 28, borderRadius: 14, backgroundColor: "#f5f5f5", justifyContent: "center", alignItems: "center" },
   quantity: { marginHorizontal: 12, fontSize: 15, fontWeight: "600", color: "#3e3e3e" },
-  removeButton: { marginLeft: "auto" as any },
+  removeButton: { marginLeft: "auto" },
   actionRow: { flexDirection: "row", gap: 16 },
   actionBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
   actionBtnText: { fontSize: 13, color: "#666" },

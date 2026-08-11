@@ -23,152 +23,81 @@ import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
 import BASE_URL from "@/config/api";
 
-const orders = [
-  {
-    id: "ORD123456",
-    date: "15 Mar 2024",
-    status: "Delivered",
-    items: [
-      {
-        id: 1,
-        name: "White Cotton T-Shirt",
-        brand: "H&M",
-        size: "L",
-        price: 799,
-        image:
-          "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&auto=format&fit=crop",
-      },
-      {
-        id: 2,
-        name: "Blue Denim Jacket",
-        brand: "Levis",
-        size: "M",
-        price: 2999,
-        image:
-          "https://images.unsplash.com/photo-1523205771623-e0faa4d2813d?w=500&auto=format&fit=crop",
-      },
-    ],
-    total: 4087,
-    shippingAddress: "123 Main Street, Apt 4B, New York, NY 10001",
-    paymentMethod: "Credit Card ending in 4242",
-    tracking: {
-      number: "TRK789012345",
-      carrier: "FedEx",
-      estimatedDelivery: "15 Mar 2024",
-      currentLocation: "New York City Hub",
-      status: "Delivered",
-      timeline: [
-        {
-          status: "Delivered",
-          location: "New York, NY",
-          timestamp: "15 Mar 2024, 14:30",
-        },
-        {
-          status: "Out for Delivery",
-          location: "New York City Hub",
-          timestamp: "15 Mar 2024, 09:15",
-        },
-        {
-          status: "Arrived at Delivery Facility",
-          location: "New York Distribution Center",
-          timestamp: "14 Mar 2024, 23:45",
-        },
-        {
-          status: "Order Shipped",
-          location: "New Jersey Warehouse",
-          timestamp: "13 Mar 2024, 16:20",
-        },
-        {
-          status: "Order Confirmed",
-          location: "Online",
-          timestamp: "12 Mar 2024, 10:00",
-        },
-      ],
-    },
-  },
-  {
-    id: "ORD123457",
-    date: "10 Mar 2024",
-    status: "Delivered",
-    items: [
-      {
-        id: 3,
-        name: "Summer Dress",
-        brand: "ONLY",
-        size: "S",
-        price: 1299,
-        image:
-          "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=500&auto=format&fit=crop",
-      },
-    ],
-    total: 1398,
-    shippingAddress: "123 Main Street, Apt 4B, New York, NY 10001",
-    paymentMethod: "Credit Card ending in 4242",
-    tracking: {
-      number: "TRK789012346",
-      carrier: "UPS",
-      estimatedDelivery: "10 Mar 2024",
-      currentLocation: "Delivered",
-      status: "Delivered",
-      timeline: [
-        {
-          status: "Delivered",
-          location: "New York, NY",
-          timestamp: "10 Mar 2024, 15:45",
-        },
-        {
-          status: "Order Shipped",
-          location: "New Jersey Warehouse",
-          timestamp: "08 Mar 2024, 11:30",
-        },
-        {
-          status: "Order Confirmed",
-          location: "Online",
-          timestamp: "07 Mar 2024, 09:15",
-        },
-      ],
-    },
-  },
-];
-
 export default function Orders() {
   const router = useRouter();
+  const { user } = useAuth();
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
-  const [orders, setorder] = useState<any>(null);
-  useEffect(() => {
-    // Simulate loading time
-    const fetchorder = async () => {
-      if (user) {
-        try {
-          setIsLoading(true);
-          const product = await axios.get(`${BASE_URL}/order/user/${user._id}`);
-          setorder(product.data);
-        } catch (error) {
-          console.log(error);
-          setIsLoading(false);
-        } finally {
-          setIsLoading(false);
-        }
-      }
-    };
-    fetchorder();
-  }, []);
-   if (isLoading) {
-      return (
-        <View style={styles.loaderContainer}>
-          <ActivityIndicator size="large" color="#ff3f6c" />
-        </View>
-      );
-    }
+  const [orders, setOrders] = useState<any[]>([]);
+
   const toggleOrderDetails = (orderId: string) => {
     setExpandedOrder(expandedOrder === orderId ? null : orderId);
   };
-  if (!orders) {
+
+  useEffect(() => {
+    const fetchorder = async () => {
+      if (!user) {
+        setIsLoading(false);
+        setOrders([]);
+        return;
+      }
+      try {
+        setIsLoading(true);
+        const res = await axios.get(`${BASE_URL}/order/user/${user._id}`);
+        setOrders(Array.isArray(res.data) ? res.data : []);
+      } catch (error) {
+        console.log(error);
+        setOrders([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchorder();
+  }, [user?._id]);
+
+  if (isLoading) {
+    return (
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color="#ff3f6c" />
+      </View>
+    );
+  }
+
+  if (!user) {
     return (
       <View style={styles.container}>
-        <Text>Order not found</Text>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>My Orders</Text>
+        </View>
+        <View style={[styles.loaderContainer, { padding: 30 }]}>
+          <Text style={{ fontSize: 16, color: "#666", marginBottom: 20 }}>
+            Please login to view your orders
+          </Text>
+          <TouchableOpacity
+            style={{
+              backgroundColor: "#ff3f6c",
+              paddingHorizontal: 30,
+              paddingVertical: 12,
+              borderRadius: 8,
+            }}
+            onPress={() => router.push("/login")}
+          >
+            <Text style={{ color: "#fff", fontWeight: "bold" }}>LOGIN</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  if (orders.length === 0) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>My Orders</Text>
+        </View>
+        <View style={[styles.loaderContainer, { padding: 30 }]}>
+          <Text style={{ fontSize: 18, color: "#666" }}>No orders yet</Text>
+        </View>
       </View>
     );
   }

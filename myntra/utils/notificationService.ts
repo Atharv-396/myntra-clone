@@ -70,6 +70,11 @@ export async function setupAndroidChannels() {
       importance: Notifications.AndroidImportance.LOW,
       lightColor: "#ff3f6c",
     }),
+    Notifications.setNotificationChannelAsync("cart", {
+      name: "Cart Reminders",
+      importance: Notifications.AndroidImportance.DEFAULT,
+      lightColor: "#ff3f6c",
+    }),
     Notifications.setNotificationChannelAsync("default", {
       name: "General",
       importance: Notifications.AndroidImportance.DEFAULT,
@@ -216,6 +221,9 @@ export function getNotificationRoute(data: Record<string, any>): string | null {
 
     case "PROMOTIONAL_CAMPAIGN":
       return "/";
+
+    case "CART_ABANDONED":
+      return "/bag";
 
     default:
       return null;

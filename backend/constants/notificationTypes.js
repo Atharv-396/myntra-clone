@@ -11,6 +11,7 @@ const NOTIFICATION_CATEGORIES = {
   WISHLIST:  "WISHLIST",
   STOCK:     "STOCK",
   PROMOTION: "PROMOTION",
+  CART:      "CART",
 };
 
 const NOTIFICATION_TYPES = {
@@ -44,6 +45,9 @@ const NOTIFICATION_TYPES = {
 
   // PROMOTION
   PROMOTIONAL_CAMPAIGN: "PROMOTIONAL_CAMPAIGN",
+
+  // CART / SCHEDULED
+  CART_ABANDONED: "CART_ABANDONED",
 };
 
 // Maps each type to its preference field on NotificationPreference
@@ -65,6 +69,7 @@ const TYPE_TO_PREFERENCE = {
   PRODUCT_BACK_IN_STOCK: "stockNotifications",
   VARIANT_BACK_IN_STOCK: "stockNotifications",
   PROMOTIONAL_CAMPAIGN:  "promotionNotifications",
+  CART_ABANDONED:        "cartNotifications",
 };
 
 module.exports = { NOTIFICATION_CATEGORIES, NOTIFICATION_TYPES, TYPE_TO_PREFERENCE };
