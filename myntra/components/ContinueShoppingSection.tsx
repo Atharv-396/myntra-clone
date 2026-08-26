@@ -1,10 +1,3 @@
-/**
- * ContinueShoppingSection.tsx
- * Shows products the user viewed but hasn't purchased yet.
- * Reuses existing add-to-bag and add-to-wishlist logic.
- * Only shown to logged-in users.
- */
-
 import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
@@ -22,6 +15,7 @@ import { useAuth } from "@/context/AuthContext";
 import { fetchContinueShopping } from "@/utils/recentlyViewedService";
 import axios from "axios";
 import BASE_URL from "@/config/api";
+import { useTheme } from "@/theme";
 
 interface ContinueShoppingSectionProps {
   refreshKey?: number;
@@ -32,6 +26,7 @@ export default function ContinueShoppingSection({
 }: ContinueShoppingSectionProps) {
   const { user } = useAuth();
   const router = useRouter();
+  const { theme } = useTheme();
   const [items, setItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [addingToBag, setAddingToBag] = useState<string | null>(null);
@@ -53,7 +48,6 @@ export default function ContinueShoppingSection({
     loadItems();
   }, [loadItems]);
 
-  // Also reload on screen focus so data is fresh after navigating back
   useFocusEffect(
     useCallback(() => {
       loadItems();
@@ -67,11 +61,10 @@ export default function ContinueShoppingSection({
     }
     try {
       setAddingToBag(productId);
-      // Reuse existing bag API — default to first size (user can change in product detail)
       await axios.post(`${BASE_URL}/bag`, {
         userId: user._id,
         productId,
-        size: "M", // default size — user can update in bag/product detail
+        size: "M",
         quantity: 1,
       });
       Alert.alert("Added to bag!");
@@ -88,7 +81,6 @@ export default function ContinueShoppingSection({
       return;
     }
     try {
-      // Reuse existing wishlist API
       await axios.post(`${BASE_URL}/wishlist`, {
         userId: user._id,
         productId,
@@ -99,14 +91,13 @@ export default function ContinueShoppingSection({
     }
   };
 
-  // Only show for logged-in users
   if (!user) return null;
 
   if (isLoading) {
     return (
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>CONTINUE SHOPPING</Text>
-        <ActivityIndicator size="small" color="#ff3f6c" style={styles.loader} />
+        <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>CONTINUE SHOPPING</Text>
+        <ActivityIndicator size="small" color={theme.colors.primary} style={styles.loader} />
       </View>
     );
   }
@@ -115,7 +106,7 @@ export default function ContinueShoppingSection({
 
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>CONTINUE SHOPPING</Text>
+      <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>CONTINUE SHOPPING</Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -125,50 +116,62 @@ export default function ContinueShoppingSection({
           const product = item.product;
           if (!product) return null;
           return (
-            <View key={product._id || index} style={styles.card}>
+            <View
+              key={product._id || index}
+              style={[
+                styles.card,
+                {
+                  backgroundColor: theme.colors.card,
+                  borderColor: theme.colors.border,
+                  borderWidth: 1,
+                },
+              ]}
+            >
               <TouchableOpacity
                 onPress={() => router.push(`/product/${product._id}`)}
+                activeOpacity={0.85}
               >
                 <Image
                   source={{ uri: product.images?.[0] }}
                   style={styles.image}
                 />
                 <View style={styles.info}>
-                  <Text style={styles.brand} numberOfLines={1}>
+                  <Text style={[styles.brand, { color: theme.colors.textTertiary }]} numberOfLines={1}>
                     {product.brand}
                   </Text>
-                  <Text style={styles.name} numberOfLines={2}>
+                  <Text style={[styles.name, { color: theme.colors.textPrimary }]} numberOfLines={2}>
                     {product.name}
                   </Text>
-                  <Text style={styles.price}>₹{product.price}</Text>
+                  <Text style={[styles.price, { color: theme.colors.textPrimary }]}>₹{product.price}</Text>
                   {product.discount ? (
-                    <Text style={styles.discount}>{product.discount}</Text>
+                    <Text style={[styles.discount, { color: theme.colors.primary }]}>{product.discount}</Text>
                   ) : null}
                 </View>
               </TouchableOpacity>
 
-              {/* Action buttons — reuse existing bag/wishlist logic */}
               <View style={styles.actions}>
                 <TouchableOpacity
-                  style={styles.bagButton}
+                  style={[styles.bagButton, { backgroundColor: theme.colors.primary }]}
                   onPress={() => handleAddToBag(product._id)}
                   disabled={addingToBag === product._id}
+                  activeOpacity={0.8}
                 >
                   {addingToBag === product._id ? (
-                    <ActivityIndicator size="small" color="#fff" />
+                    <ActivityIndicator size="small" color={theme.colors.primaryText} />
                   ) : (
                     <>
-                      <ShoppingBag size={14} color="#fff" />
-                      <Text style={styles.bagButtonText}>Add to Bag</Text>
+                      <ShoppingBag size={14} color={theme.colors.primaryText} />
+                      <Text style={[styles.bagButtonText, { color: theme.colors.primaryText }]}>Add to Bag</Text>
                     </>
                   )}
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={styles.wishlistButton}
+                  style={[styles.wishlistButton, { borderColor: theme.colors.primary }]}
                   onPress={() => handleAddToWishlist(product._id)}
+                  activeOpacity={0.7}
                 >
-                  <Heart size={16} color="#ff3f6c" />
+                  <Heart size={16} color={theme.colors.primary} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -188,7 +191,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#3e3e3e",
     marginBottom: 12,
     letterSpacing: 0.5,
   },
@@ -202,13 +204,7 @@ const styles = StyleSheet.create({
   card: {
     width: 150,
     marginRight: 12,
-    backgroundColor: "#fff",
     borderRadius: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 2,
-    elevation: 3,
     overflow: "hidden",
   },
   image: {
@@ -220,22 +216,18 @@ const styles = StyleSheet.create({
   },
   brand: {
     fontSize: 11,
-    color: "#888",
     marginBottom: 2,
   },
   name: {
     fontSize: 12,
-    color: "#3e3e3e",
     marginBottom: 4,
   },
   price: {
     fontSize: 13,
     fontWeight: "bold",
-    color: "#3e3e3e",
   },
   discount: {
     fontSize: 11,
-    color: "#ff3f6c",
     marginTop: 2,
   },
   actions: {
@@ -246,7 +238,6 @@ const styles = StyleSheet.create({
   },
   bagButton: {
     flex: 1,
-    backgroundColor: "#ff3f6c",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -255,7 +246,6 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   bagButtonText: {
-    color: "#fff",
     fontSize: 11,
     fontWeight: "bold",
   },
@@ -264,7 +254,6 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#ff3f6c",
     justifyContent: "center",
     alignItems: "center",
   },

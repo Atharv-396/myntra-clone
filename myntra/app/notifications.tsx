@@ -1,95 +1,94 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  ActivityIndicator, RefreshControl, Alert,
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Bell, BellOff, CheckCheck, ChevronLeft } from "lucide-react-native";
+import {
+  ChevronLeft,
+  Bell,
+  BellOff,
+  CheckCheck,
+  Package,
+  CreditCard,
+  Truck,
+  CheckCircle,
+  TrendingDown,
+  Sparkles,
+  Megaphone,
+} from "lucide-react-native";
 import { useAuth } from "@/context/AuthContext";
 import {
-  fetchNotifications, markNotificationRead, markAllRead,
-  fetchUnreadCount, NotificationItem,
-} from "@/utils/notificationApi";
+  fetchNotifications,
+  markNotificationRead,
+  markAllRead,
+  NotificationItem,
+} from "@/utils/notificationService";
 import { getNotificationRoute } from "@/utils/notificationService";
+import { useTheme } from "@/theme";
 
-function formatTime(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  return `${days}d ago`;
-}
-
-function getCategoryEmoji(type: string): string {
-  if (type.startsWith("ORDER")) return "🛍️";
-  if (type.startsWith("PAYMENT") || type.startsWith("REFUND")) return "💳";
-  if (type.includes("SHIPPED") || type.includes("TRANSIT") || type.includes("PACKED")) return "🚚";
-  if (type.includes("DELIVERY") || type.includes("DELIVERED") || type.includes("OUT_FOR")) return "📦";
-  if (type.includes("PRICE_DROP")) return "🔥";
-  if (type.includes("BACK_IN_STOCK")) return "🎉";
-  if (type.includes("PROMO")) return "🏷️";
-  return "🔔";
-}
+const CATEGORY_ICONS: Record<string, any> = {
+  ORDER_CONFIRMATION: Package,
+  PAYMENT_UPDATE: CreditCard,
+  SHIPPING_PROGRESS: Truck,
+  DELIVERY_STATUS: CheckCircle,
+  WISHLIST_PRICE_DROP: TrendingDown,
+  BACK_IN_STOCK: Sparkles,
+  PROMOTIONAL: Megaphone,
+};
 
 export default function NotificationsScreen() {
   const { user } = useAuth();
   const router = useRouter();
-
+  const { theme } = useTheme();
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [loadingMore, setLoadingMore] = useState(false);
 
-  const load = useCallback(async (p = 1, append = false) => {
-    if (!user) return;
+  const load = useCallback(async () => {
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
     try {
-      const data = await fetchNotifications(user._id, p, 20);
-      setTotal(data.total);
+      const data = await fetchNotifications(user._id);
+      setNotifications(data.notifications);
       setUnreadCount(data.unreadCount);
-      setNotifications((prev) => append ? [...prev, ...data.notifications] : data.notifications);
     } catch (e) {
-      console.log("load notifications error:", e);
+      console.log("Load notifications error:", e);
+    } finally {
+      setIsLoading(false);
+      setRefreshing(false);
     }
   }, [user]);
 
   useEffect(() => {
-    setIsLoading(true);
-    load(1).finally(() => setIsLoading(false));
+    load();
   }, [load]);
 
-  const onRefresh = useCallback(async () => {
+  const onRefresh = () => {
     setRefreshing(true);
-    setPage(1);
-    await load(1);
-    setRefreshing(false);
-  }, [load]);
-
-  const loadMore = async () => {
-    if (loadingMore || notifications.length >= total) return;
-    const nextPage = page + 1;
-    setPage(nextPage);
-    setLoadingMore(true);
-    await load(nextPage, true);
-    setLoadingMore(false);
+    load();
   };
 
-  const handleTap = async (notif: NotificationItem) => {
-    if (!user) return;
-    // Mark as read
+  const handleNotificationPress = async (notif: NotificationItem) => {
     if (!notif.readAt) {
-      markNotificationRead(user._id, notif._id).catch(() => {});
+      markNotificationRead(notif._id).catch(() => {});
       setNotifications((prev) =>
-        prev.map((n) => n._id === notif._id ? { ...n, readAt: new Date().toISOString(), status: "READ" } : n)
+        prev.map((n) =>
+          n._id === notif._id
+            ? { ...n, readAt: new Date().toISOString(), status: "READ" }
+            : n
+        )
       );
       setUnreadCount((c) => Math.max(0, c - 1));
     }
-    // Navigate
     const route = getNotificationRoute(notif.data);
     if (route) router.push(route as any);
   };
@@ -97,24 +96,34 @@ export default function NotificationsScreen() {
   const handleMarkAllRead = async () => {
     if (!user) return;
     await markAllRead(user._id).catch(() => {});
-    setNotifications((prev) => prev.map((n) => ({ ...n, readAt: new Date().toISOString(), status: "READ" })));
+    setNotifications((prev) =>
+      prev.map((n) => ({
+        ...n,
+        readAt: new Date().toISOString(),
+        status: "READ",
+      }))
+    );
     setUnreadCount(0);
   };
 
   if (!user) {
     return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <ChevronLeft size={24} color="#3e3e3e" />
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider }]}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
+            <ChevronLeft size={24} color={theme.colors.icon} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Notifications</Text>
+          <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>Notifications</Text>
         </View>
         <View style={styles.centerState}>
-          <BellOff size={56} color="#ccc" />
-          <Text style={styles.emptyText}>Login to see your notifications</Text>
-          <TouchableOpacity style={styles.actionBtn} onPress={() => router.push("/login")}>
-            <Text style={styles.actionBtnText}>LOGIN</Text>
+          <BellOff size={56} color={theme.colors.textTertiary} />
+          <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>Login to see your notifications</Text>
+          <TouchableOpacity
+            style={[styles.actionBtn, { backgroundColor: theme.colors.primary }]}
+            onPress={() => router.push("/login")}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.actionBtnText, { color: theme.colors.primaryText }]}>LOGIN</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -123,78 +132,102 @@ export default function NotificationsScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <ChevronLeft size={24} color="#3e3e3e" />
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider }]}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
+            <ChevronLeft size={24} color={theme.colors.icon} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Notifications</Text>
+          <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>Notifications</Text>
         </View>
         <View style={styles.centerState}>
-          <ActivityIndicator size="large" color="#ff3f6c" />
+          <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <ChevronLeft size={24} color="#3e3e3e" />
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider }]}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
+          <ChevronLeft size={24} color={theme.colors.icon} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>
+        <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>
           Notifications {unreadCount > 0 ? `(${unreadCount})` : ""}
         </Text>
         {unreadCount > 0 && (
-          <TouchableOpacity onPress={handleMarkAllRead} style={styles.markAllBtn}>
-            <CheckCheck size={20} color="#ff3f6c" />
+          <TouchableOpacity onPress={handleMarkAllRead} style={styles.markAllBtn} activeOpacity={0.7}>
+            <CheckCheck size={20} color={theme.colors.primary} />
           </TouchableOpacity>
         )}
       </View>
 
       {notifications.length === 0 ? (
         <View style={styles.centerState}>
-          <Bell size={56} color="#ccc" />
-          <Text style={styles.emptyTitle}>No notifications yet</Text>
-          <Text style={styles.emptySubtitle}>Order updates, price drops and more will appear here</Text>
+          <Bell size={56} color={theme.colors.textTertiary} />
+          <Text style={[styles.emptyTitle, { color: theme.colors.textPrimary }]}>No notifications yet</Text>
+          <Text style={[styles.emptySubtitle, { color: theme.colors.textSecondary }]}>
+            Order updates, price drops and more will appear here
+          </Text>
         </View>
       ) : (
         <ScrollView
-          style={styles.list}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#ff3f6c"]} />}
-          onScrollEndDrag={({ nativeEvent }) => {
-            const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
-            if (layoutMeasurement.height + contentOffset.y >= contentSize.height - 40) {
-              loadMore();
-            }
-          }}
-          scrollEventThrottle={400}
+          style={styles.content}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[theme.colors.primary]} />
+          }
         >
-          {notifications.map((notif) => (
-            <TouchableOpacity
-              key={notif._id}
-              style={[styles.item, !notif.readAt && styles.unreadItem]}
-              onPress={() => handleTap(notif)}
-              activeOpacity={0.8}
-            >
-              <View style={styles.itemLeft}>
-                <Text style={styles.emoji}>{getCategoryEmoji(notif.type)}</Text>
-                {!notif.readAt && <View style={styles.unreadDot} />}
-              </View>
-              <View style={styles.itemBody}>
-                <Text style={[styles.itemTitle, !notif.readAt && styles.boldTitle]}>
-                  {notif.title}
-                </Text>
-                <Text style={styles.itemBody2} numberOfLines={2}>{notif.body}</Text>
-                <Text style={styles.itemTime}>{formatTime(notif.createdAt)}</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-          {loadingMore && <ActivityIndicator size="small" color="#ff3f6c" style={{ padding: 16 }} />}
-          {notifications.length >= total && notifications.length > 0 && (
-            <Text style={styles.endText}>You're all caught up</Text>
-          )}
+          {notifications.map((n) => {
+            const isUnread = !n.readAt;
+            const Icon = CATEGORY_ICONS[n.category] || Bell;
+            return (
+              <TouchableOpacity
+                key={n._id}
+                style={[
+                  styles.card,
+                  {
+                    backgroundColor: isUnread
+                      ? (theme.isDark ? "#252525" : "#FFF7F9")
+                      : theme.colors.card,
+                    borderColor: theme.colors.border,
+                    borderWidth: 1,
+                  },
+                ]}
+                onPress={() => handleNotificationPress(n)}
+                activeOpacity={0.75}
+              >
+                <View style={[styles.iconCircle, { backgroundColor: theme.colors.surfaceSecondary }]}>
+                  <Icon size={18} color={theme.colors.primary} />
+                </View>
+                <View style={styles.cardContent}>
+                  <View style={styles.cardHeader}>
+                    <Text
+                      style={[
+                        styles.cardTitle,
+                        { color: theme.colors.textPrimary },
+                        isUnread && { fontWeight: "700" },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {n.title}
+                    </Text>
+                    {isUnread && <View style={[styles.unreadDot, { backgroundColor: theme.colors.primary }]} />}
+                  </View>
+                  <Text style={[styles.cardBody, { color: theme.colors.textSecondary }]} numberOfLines={2}>
+                    {n.body}
+                  </Text>
+                  <Text style={[styles.cardTime, { color: theme.colors.textTertiary }]}>
+                    {new Date(n.sentAt).toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
       )}
     </View>
@@ -202,27 +235,53 @@ export default function NotificationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  header: { flexDirection: "row", alignItems: "center", padding: 15, paddingTop: 50, backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#f0f0f0" },
+  container: { flex: 1 },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 15,
+    paddingTop: 50,
+    borderBottomWidth: 1,
+  },
   backBtn: { marginRight: 10, padding: 4 },
-  headerTitle: { flex: 1, fontSize: 20, fontWeight: "bold", color: "#3e3e3e" },
-  markAllBtn: { padding: 6 },
-  centerState: { flex: 1, justifyContent: "center", alignItems: "center", padding: 30 },
-  emptyTitle: { fontSize: 18, fontWeight: "bold", color: "#3e3e3e", marginTop: 16, marginBottom: 8 },
-  emptySubtitle: { fontSize: 14, color: "#888", textAlign: "center" },
-  emptyText: { fontSize: 16, color: "#666", marginTop: 16, marginBottom: 20 },
-  actionBtn: { backgroundColor: "#ff3f6c", paddingHorizontal: 30, paddingVertical: 12, borderRadius: 8 },
-  actionBtnText: { color: "#fff", fontWeight: "bold", fontSize: 15 },
-  list: { flex: 1 },
-  item: { flexDirection: "row", padding: 15, borderBottomWidth: 1, borderBottomColor: "#f5f5f5", backgroundColor: "#fff" },
-  unreadItem: { backgroundColor: "#fff8f8" },
-  itemLeft: { width: 44, alignItems: "center", paddingTop: 2 },
-  emoji: { fontSize: 22 },
-  unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: "#ff3f6c", marginTop: 4 },
-  itemBody: { flex: 1, paddingLeft: 4 },
-  itemTitle: { fontSize: 14, color: "#3e3e3e", marginBottom: 3 },
-  boldTitle: { fontWeight: "bold" },
-  itemBody2: { fontSize: 13, color: "#666", marginBottom: 4, lineHeight: 18 },
-  itemTime: { fontSize: 11, color: "#aaa" },
-  endText: { textAlign: "center", color: "#aaa", fontSize: 13, padding: 20 },
+  headerTitle: { flex: 1, fontSize: 20, fontWeight: "bold" },
+  markAllBtn: { padding: 4 },
+  content: { flex: 1, padding: 12 },
+  centerState: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 30,
+    marginTop: 80,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptySubtitle: { fontSize: 13, textAlign: "center" },
+  emptyText: { fontSize: 16, marginTop: 16, marginBottom: 20 },
+  actionBtn: { paddingHorizontal: 30, paddingVertical: 12, borderRadius: 8 },
+  actionBtnText: { fontWeight: "bold", fontSize: 14 },
+  card: {
+    flexDirection: "row",
+    padding: 14,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  iconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  cardContent: { flex: 1 },
+  cardHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 3 },
+  cardTitle: { fontSize: 14, flex: 1, marginRight: 6 },
+  unreadDot: { width: 8, height: 8, borderRadius: 4 },
+  cardBody: { fontSize: 13, marginBottom: 6, lineHeight: 18 },
+  cardTime: { fontSize: 11 },
 });

@@ -5,24 +5,17 @@ import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef } from "react";
 import * as Notifications from "expo-notifications";
+import { ThemeProvider, useTheme } from "@/theme";
 import { AuthProvider } from "@/context/AuthContext";
 import { getNotificationRoute } from "@/utils/notificationService";
 
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
-  const [loaded] = useFonts({
-    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
-  });
+function RootNavigation() {
   const router = useRouter();
+  const { theme, isDark } = useTheme();
   const notificationListener = useRef<Notifications.Subscription | null>(null);
   const responseListener = useRef<Notifications.Subscription | null>(null);
-
-  useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
 
   useEffect(() => {
     let isMounted = true;
@@ -64,13 +57,15 @@ export default function RootLayout() {
     };
   }, [router]);
 
-  if (!loaded) {
-    return null;
-  }
-
   return (
-    <AuthProvider>
-      <Stack screenOptions={{ headerShown: false }}>
+    <>
+      <StatusBar style={isDark ? "light" : "dark"} />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: theme.colors.background },
+        }}
+      >
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="product/[id]" />
@@ -80,7 +75,30 @@ export default function RootLayout() {
         <Stack.Screen name="notifications" />
         <Stack.Screen name="notification-settings" />
       </Stack>
-      <StatusBar style="auto" />
+    </>
+  );
+}
+
+export default function RootLayout() {
+  const [loaded] = useFonts({
+    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
+  });
+
+  useEffect(() => {
+    if (loaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [loaded]);
+
+  if (!loaded) {
+    return null;
+  }
+
+  return (
+    <AuthProvider>
+      <ThemeProvider>
+        <RootNavigation />
+      </ThemeProvider>
     </AuthProvider>
   );
 }

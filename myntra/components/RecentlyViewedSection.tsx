@@ -1,9 +1,3 @@
-/**
- * RecentlyViewedSection.tsx
- * Reusable horizontal scrollable section showing recently viewed products.
- * Used on the Home screen and can be embedded anywhere.
- */
-
 import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
@@ -14,20 +8,15 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from "react-native";
-import { useRouter } from "expo-router";
-import { useFocusEffect } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
-import {
-  fetchRecentlyViewed,
-} from "@/utils/recentlyViewedService";
-import {
-  getLocalRecentlyViewed,
-} from "@/utils/recentlyViewedStorage";
+import { fetchRecentlyViewed } from "@/utils/recentlyViewedService";
+import { getLocalRecentlyViewed } from "@/utils/recentlyViewedStorage";
 import axios from "axios";
 import BASE_URL from "@/config/api";
+import { useTheme } from "@/theme";
 
 interface RecentlyViewedSectionProps {
-  /** Refresh trigger — pass a number that changes to force a refresh */
   refreshKey?: number;
 }
 
@@ -36,6 +25,7 @@ export default function RecentlyViewedSection({
 }: RecentlyViewedSectionProps) {
   const { user } = useAuth();
   const router = useRouter();
+  const { theme } = useTheme();
   const [items, setItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -72,8 +62,6 @@ export default function RecentlyViewedSection({
     }
   }, [user, refreshKey]);
 
-  // useFocusEffect reloads data every time the parent screen comes into focus
-  // This ensures the section updates after user navigates back from product detail
   useFocusEffect(
     useCallback(() => {
       loadHistory();
@@ -83,10 +71,10 @@ export default function RecentlyViewedSection({
   if (isLoading) {
     return (
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>RECENTLY VIEWED</Text>
+        <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>RECENTLY VIEWED</Text>
         <ActivityIndicator
           size="small"
-          color="#ff3f6c"
+          color={theme.colors.primary}
           style={styles.loader}
         />
       </View>
@@ -94,37 +82,45 @@ export default function RecentlyViewedSection({
   }
 
   if (items.length === 0) {
-    return null; // hide section entirely if no history
+    return null;
   }
 
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>RECENTLY VIEWED</Text>
+      <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>RECENTLY VIEWED</Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         style={styles.scroll}
       >
         {items.map((item, index) => {
-          const product = item.product; // structure from API
+          const product = item.product;
           if (!product) return null;
           return (
             <TouchableOpacity
               key={product._id || index}
-              style={styles.card}
+              style={[
+                styles.card,
+                {
+                  backgroundColor: theme.colors.card,
+                  borderColor: theme.colors.border,
+                  borderWidth: 1,
+                },
+              ]}
               onPress={() => router.push(`/product/${product._id}`)}
+              activeOpacity={0.85}
             >
               <Image
                 source={{ uri: product.images?.[0] }}
                 style={styles.image}
               />
-              <Text style={styles.brand} numberOfLines={1}>
+              <Text style={[styles.brand, { color: theme.colors.textTertiary }]} numberOfLines={1}>
                 {product.brand}
               </Text>
-              <Text style={styles.name} numberOfLines={2}>
+              <Text style={[styles.name, { color: theme.colors.textPrimary }]} numberOfLines={2}>
                 {product.name}
               </Text>
-              <Text style={styles.price}>₹{product.price}</Text>
+              <Text style={[styles.price, { color: theme.colors.textPrimary }]}>₹{product.price}</Text>
             </TouchableOpacity>
           );
         })}
@@ -142,7 +138,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#3e3e3e",
     marginBottom: 12,
     letterSpacing: 0.5,
   },
@@ -156,38 +151,29 @@ const styles = StyleSheet.create({
   card: {
     width: 120,
     marginRight: 12,
-    backgroundColor: "#fff",
     borderRadius: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 2,
-    elevation: 3,
     overflow: "hidden",
     paddingBottom: 8,
   },
   image: {
     width: 120,
     height: 140,
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
+    borderTopLeftRadius: 7,
+    borderTopRightRadius: 7,
   },
   brand: {
     fontSize: 11,
-    color: "#888",
     paddingHorizontal: 6,
     marginTop: 6,
   },
   name: {
     fontSize: 12,
-    color: "#3e3e3e",
     paddingHorizontal: 6,
     marginTop: 2,
   },
   price: {
     fontSize: 13,
     fontWeight: "bold",
-    color: "#3e3e3e",
     paddingHorizontal: 6,
     marginTop: 4,
   },

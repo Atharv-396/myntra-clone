@@ -1,0 +1,51 @@
+import { Theme, ThemeColors } from "./types";
+import {
+  typographyTokens,
+  spacingTokens,
+  borderRadiusTokens,
+  shadowTokens,
+  iconSizeTokens,
+  componentHeightTokens,
+} from "./tokens";
+
+export const darkColors: ThemeColors = {
+  background: "#121212",
+  surface: "#1E1E1E",
+  surfaceSecondary: "#252525",
+  card: "#1E1E1E",
+  textPrimary: "#F3F4F6",
+  textSecondary: "#9CA3AF",
+  textTertiary: "#6B7280",
+  border: "#2D2D2D",
+  divider: "#262626",
+  primary: "#FF3F6C",
+  primaryText: "#FFFFFF",
+  secondary: "#E5E7EB",
+  success: "#10B981",
+  warning: "#F59E0B",
+  error: "#EF4444",
+  info: "#38BDF8",
+  disabled: "#4B5563",
+  overlay: "rgba(0, 0, 0, 0.7)",
+  placeholder: "#6B7280",
+  icon: "#E5E7EB",
+  iconSecondary: "#9CA3AF",
+  tabBar: "#181818",
+  tabBarBorder: "#262626",
+  tabBarActive: "#FF3F6C",
+  tabBarInactive: "#9CA3AF",
+  statusBar: "light",
+};
+
+export const darkTheme: Theme = {
+  id: "dark",
+  name: "Dark Mode",
+  isDark: true,
+  colors: darkColors,
+  typography: typographyTokens,
+  spacing: spacingTokens,
+  borderRadius: borderRadiusTokens,
+  shadows: shadowTokens,
+  iconSizes: iconSizeTokens,
+  componentHeights: componentHeightTokens,
+};

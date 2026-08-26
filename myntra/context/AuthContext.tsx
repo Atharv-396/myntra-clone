@@ -8,7 +8,7 @@ import { initializeNotifications, deregisterDevice } from "@/utils/notificationS
 
 type AuthContextType = {
   isAuthenticated: boolean;
-  user: { _id: string; name: string; email: string } | null;
+  user: { _id: string; name: string; email: string; themePreference?: string } | null;
   Signup: (fullName: string, email: string, password: string) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
@@ -22,6 +22,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     _id: string;
     name: string;
     email: string;
+    themePreference?: string;
   } | null>(null);
 
   // Restore session on app start
@@ -30,7 +31,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         const data = await getUserData();
         if (data._id && data.name && data.email) {
-          setUser({ _id: data._id, name: data.name, email: data.email });
+          setUser({
+            _id: data._id,
+            name: data.name,
+            email: data.email,
+          });
           setIsAuthenticated(true);
         }
       } catch (e) {
@@ -52,7 +57,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     await saveUserData(data._id, data.fullName, data.email);
-    setUser({ _id: data._id, name: data.fullName, email: data.email });
+    setUser({
+      _id: data._id,
+      name: data.fullName,
+      email: data.email,
+      themePreference: data.themePreference,
+    });
     setIsAuthenticated(true);
 
     // Merge any guest recently viewed history into MongoDB
@@ -77,7 +87,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     await saveUserData(data._id, data.fullName, data.email);
-    setUser({ _id: data._id, name: data.fullName, email: data.email });
+    setUser({
+      _id: data._id,
+      name: data.fullName,
+      email: data.email,
+      themePreference: data.themePreference,
+    });
     setIsAuthenticated(true);
 
     // Merge any guest recently viewed history into MongoDB

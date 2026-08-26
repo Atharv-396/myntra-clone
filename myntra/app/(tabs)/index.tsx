@@ -16,72 +16,7 @@ import BASE_URL from "@/config/api";
 import RecentlyViewedSection from "@/components/RecentlyViewedSection";
 import ContinueShoppingSection from "@/components/ContinueShoppingSection";
 import YouMayAlsoLikeSection from "@/components/YouMayAlsoLikeSection";
-
-// const categories = [
-//   {
-//     id: 1,
-//     name: "Men",
-//     image:
-//       "https://images.unsplash.com/photo-1617137968427-85924c800a22?w=500&auto=format&fit=crop",
-//   },
-//   {
-//     id: 2,
-//     name: "Women",
-//     image:
-//       "https://images.unsplash.com/photo-1618244972963-dbad0c4abf18?w=500&auto=format&fit=crop",
-//   },
-//   {
-//     id: 3,
-//     name: "Kids",
-//     image:
-//       "https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?w=500&auto=format&fit=crop",
-//   },
-//   {
-//     id: 4,
-//     name: "Beauty",
-//     image:
-//       "https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=500&auto=format&fit=crop",
-//   },
-// ];
-
-// const products = [
-//   {
-//     id: 1,
-//     name: "Casual White T-Shirt",
-//     brand: "Roadster",
-//     price: "₹499",
-//     discount: "60% OFF",
-//     image:
-//       "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&auto=format&fit=crop",
-//   },
-//   {
-//     id: 2,
-//     name: "Denim Jacket",
-//     brand: "Levis",
-//     price: "₹2499",
-//     discount: "40% OFF",
-//     image:
-//       "https://images.unsplash.com/photo-1523205771623-e0faa4d2813d?w=500&auto=format&fit=crop",
-//   },
-//   {
-//     id: 3,
-//     name: "Summer Dress",
-//     brand: "ONLY",
-//     price: "₹1299",
-//     discount: "50% OFF",
-//     image:
-//       "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=500&auto=format&fit=crop",
-//   },
-//   {
-//     id: 4,
-//     name: "Classic Sneakers",
-//     brand: "Nike",
-//     price: "₹3499",
-//     discount: "30% OFF",
-//     image:
-//       "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&auto=format&fit=crop",
-//   },
-// ];
+import { useTheme } from "@/theme";
 
 const deals = [
   {
@@ -100,13 +35,16 @@ const deals = [
 
 export default function Home() {
   const router = useRouter();
+  const { theme } = useTheme();
   const [isLoading, setIsLoading] = useState(false);
   const [product, setproduct] = useState<any>(null);
   const [categories, setcategories] = useState<any>(null);
   const { user } = useAuth();
+
   const handleProductPress = (productId: number) => {
     router.push(`/product/${productId}`);
   };
+
   useEffect(() => {
     const fetchproduct = async () => {
       try {
@@ -124,12 +62,17 @@ export default function Home() {
     };
     fetchproduct();
   }, []);
+
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.logo}>MYNTRA</Text>
-        <TouchableOpacity style={styles.searchButton}>
-          <Search size={24} color="#3e3e3e" />
+    <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider }]}>
+        <Text style={[styles.logo, { color: theme.colors.textPrimary }]}>MYNTRA</Text>
+        <TouchableOpacity
+          style={[styles.searchButton, { backgroundColor: theme.colors.surfaceSecondary }]}
+          onPress={() => router.push("/categories")}
+          activeOpacity={0.7}
+        >
+          <Search size={20} color={theme.colors.icon} />
         </TouchableOpacity>
       </View>
 
@@ -142,10 +85,13 @@ export default function Home() {
 
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>SHOP BY CATEGORY</Text>
-          <TouchableOpacity style={styles.viewAll}>
-            <Text style={styles.viewAllText}>View All</Text>
-            <ChevronRight size={20} color="#ff3f6c" />
+          <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>SHOP BY CATEGORY</Text>
+          <TouchableOpacity
+            style={styles.viewAll}
+            onPress={() => router.push("/categories")}
+          >
+            <Text style={[styles.viewAllText, { color: theme.colors.primary }]}>View All</Text>
+            <ChevronRight size={18} color={theme.colors.primary} />
           </TouchableOpacity>
         </View>
         <ScrollView
@@ -156,19 +102,24 @@ export default function Home() {
           {isLoading ? (
             <ActivityIndicator
               size="large"
-              color="#ff3f6c"
+              color={theme.colors.primary}
               style={styles.loader}
             />
           ) : !categories || categories.length === 0 ? (
-            <Text style={styles.emptyText}>No categories available</Text>
+            <Text style={[styles.emptyText, { color: theme.colors.textTertiary }]}>No categories available</Text>
           ) : (
             categories.map((category: any) => (
-              <TouchableOpacity key={category._id} style={styles.categoryCard}>
+              <TouchableOpacity
+                key={category._id}
+                style={styles.categoryCard}
+                onPress={() => router.push("/categories")}
+                activeOpacity={0.8}
+              >
                 <Image
                   source={{ uri: category.image }}
-                  style={styles.categoryImage}
+                  style={[styles.categoryImage, { borderColor: theme.colors.border }]}
                 />
-                <Text style={styles.categoryName}>{category.name}</Text>
+                <Text style={[styles.categoryName, { color: theme.colors.textPrimary }]}>{category.name}</Text>
               </TouchableOpacity>
             ))
           )}
@@ -177,7 +128,7 @@ export default function Home() {
 
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>DEALS OF THE DAY</Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>DEALS OF THE DAY</Text>
         </View>
         <ScrollView
           horizontal
@@ -185,7 +136,7 @@ export default function Home() {
           style={styles.dealsScroll}
         >
           {deals.map((deal) => (
-            <TouchableOpacity key={deal.id} style={styles.dealCard}>
+            <TouchableOpacity key={deal.id} style={styles.dealCard} activeOpacity={0.85}>
               <Image source={{ uri: deal.image }} style={styles.dealImage} />
               <View style={styles.dealOverlay}>
                 <Text style={styles.dealTitle}>{deal.title}</Text>
@@ -195,48 +146,56 @@ export default function Home() {
         </ScrollView>
       </View>
 
-      {/* Recently Viewed — shown to all users (guests see locally stored, logged-in see MongoDB) */}
+      {/* Recently Viewed */}
       <RecentlyViewedSection />
 
-      {/* Continue Shopping — logged-in users only, shows viewed but not purchased */}
+      {/* Continue Shopping */}
       <ContinueShoppingSection />
 
-      {/* You May Also Like — personalized for logged-in, popular fallback for guests */}
+      {/* You May Also Like */}
       <YouMayAlsoLikeSection userId={user?._id} limit={10} />
 
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>TRENDING NOW</Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>TRENDING NOW</Text>
         </View>
         <View style={styles.productsGrid}>
           {isLoading ? (
             <ActivityIndicator
               size="large"
-              color="#ff3f6c"
+              color={theme.colors.primary}
               style={styles.loader}
             />
           ) : !product || product.length === 0 ? (
-            <Text style={styles.emptyText}>No Product available</Text>
-          ) : ( 
+            <Text style={[styles.emptyText, { color: theme.colors.textTertiary }]}>No Product available</Text>
+          ) : (
             <View style={styles.productsGrid}>
-              {product.map((product: any) => (
+              {product.map((p: any) => (
                 <TouchableOpacity
-                  key={product._id}
-                  style={styles.productCard}
-                  onPress={() => handleProductPress(product._id)}
+                  key={p._id}
+                  style={[
+                    styles.productCard,
+                    {
+                      backgroundColor: theme.colors.card,
+                      borderColor: theme.colors.border,
+                      borderWidth: 1,
+                    },
+                  ]}
+                  onPress={() => handleProductPress(p._id)}
+                  activeOpacity={0.85}
                 >
                   <Image
-                    source={{ uri: product.images[0
-                      
-                    ] }}
+                    source={{ uri: p.images?.[0] }}
                     style={styles.productImage}
                   />
                   <View style={styles.productInfo}>
-                    <Text style={styles.brandName}>{product.brand}</Text>
-                    <Text style={styles.productName}>{product.name}</Text>
+                    <Text style={[styles.brandName, { color: theme.colors.textTertiary }]}>{p.brand}</Text>
+                    <Text style={[styles.productName, { color: theme.colors.textPrimary }]} numberOfLines={1}>{p.name}</Text>
                     <View style={styles.priceRow}>
-                      <Text style={styles.productPrice}>{product.price}</Text>
-                      <Text style={styles.discount}>{product.discount}</Text>
+                      <Text style={[styles.productPrice, { color: theme.colors.textPrimary }]}>₹{p.price}</Text>
+                      {p.discount ? (
+                        <Text style={[styles.discount, { color: theme.colors.primary }]}>{p.discount}</Text>
+                      ) : null}
                     </View>
                   </View>
                 </TouchableOpacity>
@@ -252,7 +211,6 @@ export default function Home() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
   },
   header: {
     flexDirection: "row",
@@ -260,27 +218,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 15,
     paddingTop: 50,
-    backgroundColor: "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
   },
   emptyText: {
     textAlign: "center",
     marginTop: 20,
-    fontSize: 16,
-    color: "#666",
+    fontSize: 14,
   },
   logo: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "bold",
-    color: "#3e3e3e",
+    letterSpacing: 1.5,
   },
   searchButton: {
     padding: 8,
+    borderRadius: 20,
   },
   banner: {
     width: "100%",
-    height: 200,
+    height: 180,
     resizeMode: "cover",
   },
   section: {
@@ -290,46 +246,51 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 15,
+    marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "bold",
-    color: "#3e3e3e",
+    letterSpacing: 0.5,
   },
   viewAll: {
     flexDirection: "row",
     alignItems: "center",
   },
   viewAllText: {
-    color: "#ff3f6c",
-    marginRight: 5,
+    fontSize: 13,
+    fontWeight: "600",
+    marginRight: 4,
   },
   categoriesScroll: {
     marginHorizontal: -15,
+    paddingHorizontal: 15,
   },
   categoryCard: {
-    width: 100,
-    marginHorizontal: 8,
+    width: 90,
+    marginRight: 12,
+    alignItems: "center",
   },
   categoryImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    borderWidth: 1,
   },
   categoryName: {
     textAlign: "center",
     marginTop: 8,
-    fontSize: 14,
-    color: "#3e3e3e",
+    fontSize: 13,
+    fontWeight: "500",
   },
   dealsScroll: {
     marginHorizontal: -15,
+    paddingHorizontal: 15,
   },
   dealCard: {
-    width: 280,
-    height: 150,
-    marginHorizontal: 8,
+    width: 260,
+    height: 140,
+    marginRight: 12,
     borderRadius: 10,
     overflow: "hidden",
   },
@@ -342,68 +303,55 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    padding: 15,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    padding: 12,
   },
   dealTitle: {
     color: "#fff",
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "bold",
   },
   productsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    marginHorizontal: -8,
+    justifyContent: "space-between",
   },
   productCard: {
-    width: "48%",
-    marginHorizontal: "1%",
-    marginBottom: 15,
-    backgroundColor: "#fff",
+    width: "48.5%",
+    marginBottom: 12,
     borderRadius: 10,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    overflow: "hidden",
   },
   productImage: {
     width: "100%",
-    height: 200,
-    borderTopLeftRadius: 10,
-    borderTopRightRadius: 10,
+    height: 180,
   },
   productInfo: {
     padding: 10,
   },
   brandName: {
-    fontSize: 14,
-    color: "#666",
+    fontSize: 12,
     marginBottom: 2,
   },
   productName: {
-    fontSize: 16,
-    marginBottom: 5,
+    fontSize: 14,
+    fontWeight: "500",
+    marginBottom: 4,
   },
   priceRow: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 6,
   },
   productPrice: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "bold",
-    color: "#3e3e3e",
-    marginRight: 8,
   },
   discount: {
-    fontSize: 14,
-    color: "#ff3f6c",
-    fontWeight: "500",
+    fontSize: 12,
+    fontWeight: "600",
   },
   loader: {
-    marginTop: 50,
+    marginTop: 40,
   },
 });

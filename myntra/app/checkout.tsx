@@ -2,13 +2,14 @@ import { useAuth } from "@/context/AuthContext";
 import axios from "axios";
 import BASE_URL from "@/config/api";
 import { useRouter } from "expo-router";
-import { CreditCard, MapPin, Truck, CircleAlert } from "lucide-react-native";
+import { CreditCard, MapPin, Truck, CircleAlert, ChevronLeft } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
   View, Text, StyleSheet, ScrollView, TextInput,
   TouchableOpacity, ActivityIndicator, Alert,
 } from "react-native";
 import { fetchCheckoutSummary, CheckoutSummary } from "@/utils/cartService";
+import { useTheme } from "@/theme";
 
 export default function Checkout() {
   const [loading, setLoading] = useState(false);
@@ -17,8 +18,8 @@ export default function Checkout() {
   const [summaryError, setSummaryError] = useState<string | null>(null);
   const router = useRouter();
   const { user } = useAuth();
+  const { theme } = useTheme();
 
-  // Load validated checkout summary from backend on mount
   useEffect(() => {
     if (!user) return;
     const load = async () => {
@@ -26,15 +27,12 @@ export default function Checkout() {
       setSummaryError(null);
       try {
         const data = await fetchCheckoutSummary(user._id);
-
-        // Show price change alert if backend detected any
         if (data.priceChanges.length > 0) {
           const changes = data.priceChanges
             .map((p) => `• ${p.productName}: ₹${p.oldPrice} → ₹${p.newPrice}`)
             .join("\n");
           Alert.alert("Price Updated", `Some prices have changed:\n\n${changes}\n\nCheckout total has been updated.`);
         }
-
         setSummary(data);
       } catch (e: any) {
         const msg = e?.response?.data?.message || "Could not load checkout summary";
@@ -68,12 +66,21 @@ export default function Checkout() {
 
   if (!user) {
     return (
-      <View style={styles.container}>
-        <View style={styles.header}><Text style={styles.headerTitle}>Checkout</Text></View>
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider }]}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
+            <ChevronLeft size={24} color={theme.colors.icon} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>Checkout</Text>
+        </View>
         <View style={styles.centerState}>
-          <Text style={styles.errorText}>Please login to checkout</Text>
-          <TouchableOpacity style={styles.actionButton} onPress={() => router.push("/login")}>
-            <Text style={styles.actionButtonText}>LOGIN</Text>
+          <Text style={[styles.errorText, { color: theme.colors.textSecondary }]}>Please login to checkout</Text>
+          <TouchableOpacity
+            style={[styles.actionButton, { backgroundColor: theme.colors.primary }]}
+            onPress={() => router.push("/login")}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.actionButtonText, { color: theme.colors.primaryText }]}>LOGIN</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -81,131 +88,186 @@ export default function Checkout() {
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Checkout</Text>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider }]}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
+          <ChevronLeft size={24} color={theme.colors.icon} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>Checkout</Text>
       </View>
-      <ScrollView style={styles.content}>
 
+      <ScrollView style={styles.content}>
         {/* Shipping Address */}
-        <View style={styles.section}>
+        <View style={[styles.section, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
           <View style={styles.sectionHeader}>
-            <MapPin size={24} color="#ff3f6c" />
-            <Text style={styles.sectionTitle}>Shipping Address</Text>
+            <MapPin size={22} color={theme.colors.primary} />
+            <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>Shipping Address</Text>
           </View>
           <View style={styles.form}>
-            <TextInput style={styles.input} placeholder="Full Name" defaultValue="John Doe" />
-            <TextInput style={styles.input} placeholder="Address Line 1" defaultValue="123 Main Street" />
-            <TextInput style={styles.input} placeholder="Address Line 2" defaultValue="Apt 4B" />
+            <TextInput
+              style={[styles.input, { backgroundColor: theme.colors.surfaceSecondary, color: theme.colors.textPrimary }]}
+              placeholder="Full Name"
+              placeholderTextColor={theme.colors.placeholder}
+              defaultValue="John Doe"
+            />
+            <TextInput
+              style={[styles.input, { backgroundColor: theme.colors.surfaceSecondary, color: theme.colors.textPrimary }]}
+              placeholder="Address Line 1"
+              placeholderTextColor={theme.colors.placeholder}
+              defaultValue="123 Main Street"
+            />
+            <TextInput
+              style={[styles.input, { backgroundColor: theme.colors.surfaceSecondary, color: theme.colors.textPrimary }]}
+              placeholder="Address Line 2"
+              placeholderTextColor={theme.colors.placeholder}
+              defaultValue="Apt 4B"
+            />
             <View style={styles.row}>
-              <TextInput style={[styles.input, styles.halfInput]} placeholder="City" defaultValue="New York" />
-              <TextInput style={[styles.input, styles.halfInput]} placeholder="State" defaultValue="NY" />
+              <TextInput
+                style={[styles.input, styles.halfInput, { backgroundColor: theme.colors.surfaceSecondary, color: theme.colors.textPrimary }]}
+                placeholder="City"
+                placeholderTextColor={theme.colors.placeholder}
+                defaultValue="New York"
+              />
+              <TextInput
+                style={[styles.input, styles.halfInput, { backgroundColor: theme.colors.surfaceSecondary, color: theme.colors.textPrimary }]}
+                placeholder="State"
+                placeholderTextColor={theme.colors.placeholder}
+                defaultValue="NY"
+              />
             </View>
             <View style={styles.row}>
-              <TextInput style={[styles.input, styles.halfInput]} placeholder="Postal Code" defaultValue="10001" />
-              <TextInput style={[styles.input, styles.halfInput]} placeholder="Country" defaultValue="United States" />
+              <TextInput
+                style={[styles.input, styles.halfInput, { backgroundColor: theme.colors.surfaceSecondary, color: theme.colors.textPrimary }]}
+                placeholder="Postal Code"
+                placeholderTextColor={theme.colors.placeholder}
+                defaultValue="10001"
+              />
+              <TextInput
+                style={[styles.input, styles.halfInput, { backgroundColor: theme.colors.surfaceSecondary, color: theme.colors.textPrimary }]}
+                placeholder="Country"
+                placeholderTextColor={theme.colors.placeholder}
+                defaultValue="United States"
+              />
             </View>
           </View>
         </View>
 
         {/* Payment */}
-        <View style={styles.section}>
+        <View style={[styles.section, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
           <View style={styles.sectionHeader}>
-            <CreditCard size={24} color="#ff3f6c" />
-            <Text style={styles.sectionTitle}>Payment Method</Text>
+            <CreditCard size={22} color={theme.colors.primary} />
+            <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>Payment Method</Text>
           </View>
           <View style={styles.form}>
-            <TextInput style={styles.input} placeholder="Card Number" defaultValue="**** **** **** 4242" />
+            <TextInput
+              style={[styles.input, { backgroundColor: theme.colors.surfaceSecondary, color: theme.colors.textPrimary }]}
+              placeholder="Card Number"
+              placeholderTextColor={theme.colors.placeholder}
+              defaultValue="**** **** **** 4242"
+            />
             <View style={styles.row}>
-              <TextInput style={[styles.input, styles.halfInput]} placeholder="Expiry Date" defaultValue="12/25" />
-              <TextInput style={[styles.input, styles.halfInput]} placeholder="CVV" defaultValue="***" />
+              <TextInput
+                style={[styles.input, styles.halfInput, { backgroundColor: theme.colors.surfaceSecondary, color: theme.colors.textPrimary }]}
+                placeholder="Expiry Date"
+                placeholderTextColor={theme.colors.placeholder}
+                defaultValue="12/25"
+              />
+              <TextInput
+                style={[styles.input, styles.halfInput, { backgroundColor: theme.colors.surfaceSecondary, color: theme.colors.textPrimary }]}
+                placeholder="CVV"
+                placeholderTextColor={theme.colors.placeholder}
+                defaultValue="***"
+              />
             </View>
           </View>
         </View>
 
-        {/* Order Summary â€” live from backend */}
-        <View style={styles.section}>
+        {/* Order Summary */}
+        <View style={[styles.section, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
           <View style={styles.sectionHeader}>
-            <Truck size={24} color="#ff3f6c" />
-            <Text style={styles.sectionTitle}>Order Summary</Text>
+            <Truck size={22} color={theme.colors.primary} />
+            <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>Order Summary</Text>
           </View>
 
           {summaryLoading ? (
-            <ActivityIndicator size="small" color="#ff3f6c" style={{ marginVertical: 20 }} />
+            <ActivityIndicator size="small" color={theme.colors.primary} style={{ marginVertical: 20 }} />
           ) : summaryError ? (
-            <View style={styles.errorBox}>
-              <CircleAlert size={18} color="#cc0000" />
-              <Text style={styles.errorBoxText}>{summaryError}</Text>
+            <View style={[styles.errorBox, { backgroundColor: theme.isDark ? "#3A1B1F" : "#FFEEF0" }]}>
+              <CircleAlert size={18} color={theme.colors.error} />
+              <Text style={[styles.errorBoxText, { color: theme.colors.error }]}>{summaryError}</Text>
             </View>
           ) : summary ? (
             <>
-              {/* Invalid items warning */}
               {summary.invalidItems.length > 0 && (
-                <View style={styles.warningBox}>
-                  <CircleAlert size={16} color="#856404" />
-                  <Text style={styles.warningText}>
-                    {summary.invalidItems.map((i) => i.productName).join(", ")} {summary.invalidItems.length === 1 ? "is" : "are"} unavailable
+                <View style={[styles.warningBox, { backgroundColor: theme.isDark ? "#3A2E1A" : "#FFF3CD" }]}>
+                  <CircleAlert size={16} color={theme.colors.warning} />
+                  <Text style={[styles.warningText, { color: theme.colors.warning }]}>
+                    {summary.invalidItems.map((i) => i.productName).join(", ")}{" "}
+                    {summary.invalidItems.length === 1 ? "is" : "are"} unavailable
                   </Text>
                 </View>
               )}
 
-              {/* Stock warnings */}
               {summary.warnings.length > 0 && (
-                <View style={styles.warningBox}>
-                  <CircleAlert size={16} color="#856404" />
-                  <Text style={styles.warningText}>
+                <View style={[styles.warningBox, { backgroundColor: theme.isDark ? "#3A2E1A" : "#FFF3CD" }]}>
+                  <CircleAlert size={16} color={theme.colors.warning} />
+                  <Text style={[styles.warningText, { color: theme.colors.warning }]}>
                     {summary.warnings.map((w) => w.message).join(". ")}
                   </Text>
                 </View>
               )}
 
-              {/* Line items */}
               {summary.items.map((item) => (
                 <View key={item._id} style={styles.lineItem}>
-                  <Text style={styles.lineItemName} numberOfLines={1}>
+                  <Text style={[styles.lineItemName, { color: theme.colors.textPrimary }]} numberOfLines={1}>
                     {item.brand} {item.name} × {item.quantity}
                     {item.size ? ` (${item.size})` : ""}
                   </Text>
-                  <Text style={styles.lineItemPrice}>₹{item.lineTotal}</Text>
+                  <Text style={[styles.lineItemPrice, { color: theme.colors.textPrimary }]}>₹{item.lineTotal}</Text>
                 </View>
               ))}
 
-              <View style={styles.divider} />
+              <View style={[styles.divider, { backgroundColor: theme.colors.divider }]} />
 
-              {/* Totals */}
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Subtotal</Text>
-                <Text style={styles.summaryValue}>₹{summary.subtotal}</Text>
+                <Text style={[styles.summaryLabel, { color: theme.colors.textSecondary }]}>Subtotal</Text>
+                <Text style={[styles.summaryValue, { color: theme.colors.textPrimary }]}>₹{summary.subtotal}</Text>
               </View>
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>Shipping</Text>
-                <Text style={styles.summaryValue}>
+                <Text style={[styles.summaryLabel, { color: theme.colors.textSecondary }]}>Shipping</Text>
+                <Text style={[styles.summaryValue, { color: theme.colors.textPrimary }]}>
                   {summary.shipping === 0 ? "FREE" : `₹${summary.shipping}`}
                 </Text>
               </View>
               <View style={styles.summaryRow}>
-                <Text style={styles.summaryLabel}>GST ({Math.round(summary.taxRate * 100)}%)</Text>
-                <Text style={styles.summaryValue}>₹{summary.tax}</Text>
+                <Text style={[styles.summaryLabel, { color: theme.colors.textSecondary }]}>GST ({Math.round(summary.taxRate * 100)}%)</Text>
+                <Text style={[styles.summaryValue, { color: theme.colors.textPrimary }]}>₹{summary.tax}</Text>
               </View>
-              <View style={[styles.summaryRow, styles.totalRow]}>
-                <Text style={styles.totalLabel}>Total Payable</Text>
-                <Text style={styles.totalValue}>₹{summary.grandTotal}</Text>
+              <View style={[styles.summaryRow, styles.totalRow, { borderTopColor: theme.colors.divider }]}>
+                <Text style={[styles.totalLabel, { color: theme.colors.textPrimary }]}>Total Payable</Text>
+                <Text style={[styles.totalValue, { color: theme.colors.primary }]}>₹{summary.grandTotal}</Text>
               </View>
             </>
           ) : null}
         </View>
       </ScrollView>
 
-      <View style={styles.footer}>
+      <View style={[styles.footer, { backgroundColor: theme.colors.card, borderTopColor: theme.colors.divider }]}>
         <TouchableOpacity
-          style={[styles.placeOrderButton, (!summary?.canCheckout || loading) && styles.disabledButton]}
+          style={[
+            styles.placeOrderButton,
+            { backgroundColor: theme.colors.primary },
+            (!summary?.canCheckout || loading) && styles.disabledButton,
+          ]}
           onPress={handlePlaceOrder}
           disabled={!summary?.canCheckout || loading || summaryLoading}
+          activeOpacity={0.85}
         >
           {loading ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color={theme.colors.primaryText} />
           ) : (
-            <Text style={styles.placeOrderButtonText}>
+            <Text style={[styles.placeOrderButtonText, { color: theme.colors.primaryText }]}>
               {summary?.canCheckout === false ? "RESOLVE CART ISSUES" : "PLACE ORDER"}
             </Text>
           )}
@@ -216,37 +278,38 @@ export default function Checkout() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  header: { padding: 15, paddingTop: 50, backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#f0f0f0" },
-  headerTitle: { fontSize: 24, fontWeight: "bold", color: "#3e3e3e" },
-  content: { flex: 1, padding: 15 },
+  container: { flex: 1 },
+  header: { flexDirection: "row", alignItems: "center", padding: 15, paddingTop: 50, borderBottomWidth: 1 },
+  backBtn: { marginRight: 10, padding: 4 },
+  headerTitle: { fontSize: 20, fontWeight: "bold" },
+  content: { flex: 1, padding: 12 },
   centerState: { flex: 1, justifyContent: "center", alignItems: "center", padding: 30 },
-  errorText: { fontSize: 16, color: "#666", marginBottom: 20 },
-  actionButton: { backgroundColor: "#ff3f6c", paddingHorizontal: 30, paddingVertical: 14, borderRadius: 8 },
-  actionButtonText: { color: "#fff", fontWeight: "bold", fontSize: 15 },
-  section: { marginBottom: 20, backgroundColor: "#fff", borderRadius: 10, padding: 15, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3.84, elevation: 5 },
-  sectionHeader: { flexDirection: "row", alignItems: "center", marginBottom: 15 },
-  sectionTitle: { fontSize: 18, fontWeight: "bold", color: "#3e3e3e", marginLeft: 10 },
+  errorText: { fontSize: 16, marginBottom: 20 },
+  actionButton: { paddingHorizontal: 30, paddingVertical: 14, borderRadius: 8 },
+  actionButtonText: { fontWeight: "bold", fontSize: 15 },
+  section: { marginBottom: 12, borderRadius: 10, padding: 14, borderWidth: 1 },
+  sectionHeader: { flexDirection: "row", alignItems: "center", marginBottom: 14 },
+  sectionTitle: { fontSize: 16, fontWeight: "bold", marginLeft: 8 },
   form: { gap: 10 },
-  input: { backgroundColor: "#f5f5f5", padding: 15, borderRadius: 10, fontSize: 16, marginBottom: 10 },
+  input: { padding: 12, borderRadius: 8, fontSize: 14, marginBottom: 8 },
   row: { flexDirection: "row", justifyContent: "space-between" },
   halfInput: { width: "48%" },
-  errorBox: { flexDirection: "row", alignItems: "center", backgroundColor: "#ffeef0", padding: 12, borderRadius: 8, marginBottom: 12, gap: 8 },
-  errorBoxText: { color: "#cc0000", fontSize: 14, flex: 1 },
-  warningBox: { flexDirection: "row", alignItems: "flex-start", backgroundColor: "#fff3cd", padding: 10, borderRadius: 8, marginBottom: 10, gap: 8 },
-  warningText: { color: "#856404", fontSize: 13, flex: 1 },
-  lineItem: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 5 },
-  lineItemName: { fontSize: 14, color: "#3e3e3e", flex: 1, marginRight: 8 },
-  lineItemPrice: { fontSize: 14, color: "#3e3e3e", fontWeight: "500" },
-  divider: { height: 1, backgroundColor: "#f0f0f0", marginVertical: 10 },
-  summaryRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 5 },
-  summaryLabel: { fontSize: 15, color: "#666" },
-  summaryValue: { fontSize: 15, color: "#3e3e3e" },
-  totalRow: { borderTopWidth: 1, borderTopColor: "#f0f0f0", marginTop: 8, paddingTop: 10 },
-  totalLabel: { fontSize: 17, fontWeight: "bold", color: "#3e3e3e" },
-  totalValue: { fontSize: 17, fontWeight: "bold", color: "#ff3f6c" },
-  footer: { padding: 15, backgroundColor: "#fff", borderTopWidth: 1, borderTopColor: "#f0f0f0" },
-  placeOrderButton: { backgroundColor: "#ff3f6c", padding: 15, borderRadius: 10, alignItems: "center" },
-  disabledButton: { backgroundColor: "#ccc" },
-  placeOrderButtonText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
+  errorBox: { flexDirection: "row", alignItems: "center", padding: 12, borderRadius: 8, marginBottom: 12, gap: 8 },
+  errorBoxText: { fontSize: 13, flex: 1 },
+  warningBox: { flexDirection: "row", alignItems: "flex-start", padding: 10, borderRadius: 8, marginBottom: 10, gap: 8 },
+  warningText: { fontSize: 12, flex: 1 },
+  lineItem: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 4 },
+  lineItemName: { fontSize: 13, flex: 1, marginRight: 8 },
+  lineItemPrice: { fontSize: 13, fontWeight: "500" },
+  divider: { height: 1, marginVertical: 10 },
+  summaryRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 4 },
+  summaryLabel: { fontSize: 14 },
+  summaryValue: { fontSize: 14, fontWeight: "500" },
+  totalRow: { borderTopWidth: 1, marginTop: 6, paddingTop: 10 },
+  totalLabel: { fontSize: 16, fontWeight: "bold" },
+  totalValue: { fontSize: 18, fontWeight: "bold" },
+  footer: { padding: 14, borderTopWidth: 1 },
+  placeOrderButton: { padding: 14, borderRadius: 10, alignItems: "center" },
+  disabledButton: { opacity: 0.6 },
+  placeOrderButtonText: { fontSize: 15, fontWeight: "bold" },
 });

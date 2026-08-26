@@ -1,0 +1,51 @@
+import { Theme, ThemeColors } from "./types";
+import {
+  typographyTokens,
+  spacingTokens,
+  borderRadiusTokens,
+  shadowTokens,
+  iconSizeTokens,
+  componentHeightTokens,
+} from "./tokens";
+
+export const lightColors: ThemeColors = {
+  background: "#FFFFFF",
+  surface: "#F5F5F5",
+  surfaceSecondary: "#F8F8F8",
+  card: "#FFFFFF",
+  textPrimary: "#11181C",
+  textSecondary: "#666666",
+  textTertiary: "#888888",
+  border: "#E0E0E0",
+  divider: "#F0F0F0",
+  primary: "#FF3F6C",
+  primaryText: "#FFFFFF",
+  secondary: "#3E3E3E",
+  success: "#03A685",
+  warning: "#F5A623",
+  error: "#E53935",
+  info: "#0A7EA4",
+  disabled: "#D1D5DB",
+  overlay: "rgba(0, 0, 0, 0.4)",
+  placeholder: "#9CA3AF",
+  icon: "#3E3E3E",
+  iconSecondary: "#6B7280",
+  tabBar: "#FFFFFF",
+  tabBarBorder: "#F0F0F0",
+  tabBarActive: "#FF3F6C",
+  tabBarInactive: "#3E3E3E",
+  statusBar: "dark",
+};
+
+export const lightTheme: Theme = {
+  id: "light",
+  name: "Light Mode",
+  isDark: false,
+  colors: lightColors,
+  typography: typographyTokens,
+  spacing: spacingTokens,
+  borderRadius: borderRadiusTokens,
+  shadows: shadowTokens,
+  iconSizes: iconSizeTokens,
+  componentHeights: componentHeightTokens,
+};

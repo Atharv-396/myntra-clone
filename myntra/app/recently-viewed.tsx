@@ -1,9 +1,3 @@
-/**
- * recently-viewed.tsx
- * Full-screen recently viewed history page.
- * Accessible from Profile or any deep link.
- */
-
 import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
@@ -16,7 +10,7 @@ import {
   Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Trash2 } from "lucide-react-native";
+import { Trash2, ChevronLeft } from "lucide-react-native";
 import { useAuth } from "@/context/AuthContext";
 import {
   fetchRecentlyViewed,
@@ -28,10 +22,12 @@ import {
 } from "@/utils/recentlyViewedStorage";
 import axios from "axios";
 import BASE_URL from "@/config/api";
+import { useTheme } from "@/theme";
 
 export default function RecentlyViewedScreen() {
   const { user } = useAuth();
   const router = useRouter();
+  const { theme } = useTheme();
   const [items, setItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -92,38 +88,39 @@ export default function RecentlyViewedScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="#ff3f6c" />
+      <View style={[styles.loaderContainer, { backgroundColor: theme.colors.background }]}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Text style={styles.backText}>←</Text>
+      <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider }]}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
+          <ChevronLeft size={24} color={theme.colors.icon} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Recently Viewed</Text>
+        <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>Recently Viewed</Text>
         {items.length > 0 && (
-          <TouchableOpacity onPress={handleClearAll} style={styles.clearBtn}>
-            <Trash2 size={20} color="#ff3f6c" />
+          <TouchableOpacity onPress={handleClearAll} style={styles.clearBtn} activeOpacity={0.7}>
+            <Trash2 size={20} color={theme.colors.primary} />
           </TouchableOpacity>
         )}
       </View>
 
       {items.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyTitle}>No recently viewed products</Text>
-          <Text style={styles.emptySubtitle}>
+          <Text style={[styles.emptyTitle, { color: theme.colors.textPrimary }]}>No recently viewed products</Text>
+          <Text style={[styles.emptySubtitle, { color: theme.colors.textSecondary }]}>
             Products you view will appear here
           </Text>
           <TouchableOpacity
-            style={styles.shopButton}
+            style={[styles.shopButton, { backgroundColor: theme.colors.primary }]}
             onPress={() => router.push("/")}
+            activeOpacity={0.8}
           >
-            <Text style={styles.shopButtonText}>START SHOPPING</Text>
+            <Text style={[styles.shopButtonText, { color: theme.colors.primaryText }]}>START SHOPPING</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -135,24 +132,32 @@ export default function RecentlyViewedScreen() {
               return (
                 <TouchableOpacity
                   key={product._id || index}
-                  style={styles.productCard}
+                  style={[
+                    styles.productCard,
+                    {
+                      backgroundColor: theme.colors.card,
+                      borderColor: theme.colors.border,
+                      borderWidth: 1,
+                    },
+                  ]}
                   onPress={() => router.push(`/product/${product._id}`)}
+                  activeOpacity={0.85}
                 >
                   <Image
                     source={{ uri: product.images?.[0] }}
                     style={styles.productImage}
                   />
                   <View style={styles.productInfo}>
-                    <Text style={styles.brandName} numberOfLines={1}>
+                    <Text style={[styles.brandName, { color: theme.colors.textTertiary }]} numberOfLines={1}>
                       {product.brand}
                     </Text>
-                    <Text style={styles.productName} numberOfLines={2}>
+                    <Text style={[styles.productName, { color: theme.colors.textPrimary }]} numberOfLines={2}>
                       {product.name}
                     </Text>
                     <View style={styles.priceRow}>
-                      <Text style={styles.price}>₹{product.price}</Text>
+                      <Text style={[styles.price, { color: theme.colors.textPrimary }]}>₹{product.price}</Text>
                       {product.discount ? (
-                        <Text style={styles.discount}>{product.discount}</Text>
+                        <Text style={[styles.discount, { color: theme.colors.primary }]}>{product.discount}</Text>
                       ) : null}
                     </View>
                   </View>
@@ -167,79 +172,65 @@ export default function RecentlyViewedScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
+  container: { flex: 1 },
   loaderContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#fff",
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     padding: 15,
     paddingTop: 50,
-    backgroundColor: "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
   },
-  backBtn: { paddingRight: 15 },
-  backText: { fontSize: 22, color: "#3e3e3e" },
+  backBtn: { paddingRight: 10, padding: 4 },
   headerTitle: {
     flex: 1,
     fontSize: 20,
     fontWeight: "bold",
-    color: "#3e3e3e",
   },
   clearBtn: { padding: 5 },
-  content: { flex: 1, padding: 10 },
+  content: { flex: 1, padding: 12 },
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
   },
   productCard: {
-    width: "48%",
-    backgroundColor: "#fff",
+    width: "48.5%",
     borderRadius: 10,
-    marginBottom: 15,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    marginBottom: 12,
     overflow: "hidden",
   },
   productImage: { width: "100%", height: 180 },
   productInfo: { padding: 10 },
-  brandName: { fontSize: 12, color: "#888", marginBottom: 3 },
-  productName: { fontSize: 14, color: "#3e3e3e", marginBottom: 6 },
-  priceRow: { flexDirection: "row", alignItems: "center" },
+  brandName: { fontSize: 11, marginBottom: 2 },
+  productName: { fontSize: 13, fontWeight: "500", marginBottom: 4 },
+  priceRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   price: {
     fontSize: 14,
     fontWeight: "bold",
-    color: "#3e3e3e",
-    marginRight: 6,
   },
-  discount: { fontSize: 12, color: "#ff3f6c" },
+  discount: { fontSize: 12, fontWeight: "600" },
   emptyState: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     padding: 30,
+    marginTop: 100,
   },
   emptyTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#3e3e3e",
     marginBottom: 8,
   },
-  emptySubtitle: { fontSize: 14, color: "#888", marginBottom: 24 },
+  emptySubtitle: { fontSize: 14, marginBottom: 24 },
   shopButton: {
-    backgroundColor: "#ff3f6c",
     paddingHorizontal: 30,
     paddingVertical: 12,
     borderRadius: 8,
   },
-  shopButtonText: { color: "#fff", fontWeight: "bold", fontSize: 14 },
+  shopButtonText: { fontWeight: "bold", fontSize: 14 },
 });

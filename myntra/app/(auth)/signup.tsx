@@ -13,10 +13,12 @@ import { useRouter } from "expo-router";
 import { Eye, EyeOff } from "lucide-react-native";
 import React from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/theme";
 
 export default function Signup() {
   const { Signup } = useAuth();
   const router = useRouter();
+  const { theme } = useTheme();
   const [isloading, setisloading] = useState(false);
   const [formData, setFormData] = useState({
     fullName: "",
@@ -54,8 +56,8 @@ export default function Signup() {
     if (!formData.password) {
       newErrors.password = "Password is required";
       isValid = false;
-    } else if (formData.password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters";
+    } else if (formData.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
       isValid = false;
     }
 
@@ -65,7 +67,6 @@ export default function Signup() {
 
   const handleSignup = async () => {
     if (validateForm()) {
-      // Here you would typically make an API call to register the user
       try {
         setisloading(true);
         await Signup(formData.fullName, formData.email, formData.password);
@@ -75,13 +76,12 @@ export default function Signup() {
       } finally {
         setisloading(false);
       }
-      router.replace("/(tabs)");
     }
   };
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
       contentContainerStyle={styles.scrollContent}
     >
       <Image
@@ -91,37 +91,62 @@ export default function Signup() {
         style={styles.backgroundImage}
       />
 
-      <View style={styles.formContainer}>
-        <Text style={styles.title}>Create Account</Text>
-        <Text style={styles.subtitle}>
+      <View
+        style={[
+          styles.formContainer,
+          {
+            backgroundColor: theme.isDark ? "#1E1E1E" : "rgba(255, 255, 255, 0.95)",
+            borderColor: theme.colors.border,
+            borderWidth: 1,
+          },
+        ]}
+      >
+        <Text style={[styles.title, { color: theme.colors.textPrimary }]}>Create Account</Text>
+        <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
           Join Myntra and discover amazing fashion
         </Text>
 
         <View style={styles.inputGroup}>
           <TextInput
-            style={[styles.input, errors.fullName && styles.inputError]}
+            style={[
+              styles.input,
+              {
+                backgroundColor: theme.colors.surfaceSecondary,
+                color: theme.colors.textPrimary,
+                borderColor: errors.fullName ? theme.colors.error : theme.colors.border,
+              },
+            ]}
             placeholder="Full Name"
+            placeholderTextColor={theme.colors.placeholder}
             value={formData.fullName}
             onChangeText={(text) =>
               setFormData({ ...formData, fullName: text })
             }
           />
           {errors.fullName ? (
-            <Text style={styles.errorText}>{errors.fullName}</Text>
+            <Text style={[styles.errorText, { color: theme.colors.error }]}>{errors.fullName}</Text>
           ) : null}
         </View>
 
         <View style={styles.inputGroup}>
           <TextInput
-            style={[styles.input, errors.email && styles.inputError]}
+            style={[
+              styles.input,
+              {
+                backgroundColor: theme.colors.surfaceSecondary,
+                color: theme.colors.textPrimary,
+                borderColor: errors.email ? theme.colors.error : theme.colors.border,
+              },
+            ]}
             placeholder="Email"
+            placeholderTextColor={theme.colors.placeholder}
             value={formData.email}
             onChangeText={(text) => setFormData({ ...formData, email: text })}
             keyboardType="email-address"
             autoCapitalize="none"
           />
           {errors.email ? (
-            <Text style={styles.errorText}>{errors.email}</Text>
+            <Text style={[styles.errorText, { color: theme.colors.error }]}>{errors.email}</Text>
           ) : null}
         </View>
 
@@ -129,12 +154,19 @@ export default function Signup() {
           <View
             style={[
               styles.passwordContainer,
-              errors.password && styles.inputError,
+              {
+                backgroundColor: theme.colors.surfaceSecondary,
+                borderColor: errors.password ? theme.colors.error : theme.colors.border,
+              },
             ]}
           >
             <TextInput
-              style={styles.passwordInput}
+              style={[
+                styles.passwordInput,
+                { color: theme.colors.textPrimary },
+              ]}
               placeholder="Password"
+              placeholderTextColor={theme.colors.placeholder}
               value={formData.password}
               onChangeText={(text) =>
                 setFormData({ ...formData, password: text })
@@ -146,33 +178,38 @@ export default function Signup() {
               onPress={() => setShowPassword(!showPassword)}
             >
               {showPassword ? (
-                <EyeOff size={20} color="#666" />
+                <EyeOff size={20} color={theme.colors.iconSecondary} />
               ) : (
-                <Eye size={20} color="#666" />
+                <Eye size={20} color={theme.colors.iconSecondary} />
               )}
             </TouchableOpacity>
           </View>
           {errors.password ? (
-            <Text style={styles.errorText}>{errors.password}</Text>
+            <Text style={[styles.errorText, { color: theme.colors.error }]}>{errors.password}</Text>
           ) : null}
         </View>
+
         <TouchableOpacity
-          style={styles.button}
+          style={[styles.button, { backgroundColor: theme.colors.primary }]}
           onPress={handleSignup}
           disabled={isloading}
+          activeOpacity={0.85}
         >
           {isloading ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color={theme.colors.primaryText} />
           ) : (
-            <Text style={styles.buttonText}>SIGN UP</Text>
+            <Text style={[styles.buttonText, { color: theme.colors.primaryText }]}>SIGN UP</Text>
           )}
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.loginLink}
           onPress={() => router.push("/login")}
+          activeOpacity={0.7}
         >
-          <Text style={styles.loginText}>Already have an account? Login</Text>
+          <Text style={[styles.loginText, { color: theme.colors.primary }]}>
+            Already have an account? Login
+          </Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -182,7 +219,6 @@ export default function Signup() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
   },
   scrollContent: {
     flexGrow: 1,
@@ -195,74 +231,64 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     flex: 1,
-    padding: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
-    marginTop: 250,
+    padding: 24,
+    marginTop: 240,
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
   },
   title: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: "bold",
-    marginBottom: 10,
-    color: "#3e3e3e",
+    marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
-    color: "#666",
-    marginBottom: 30,
+    fontSize: 15,
+    marginBottom: 24,
   },
   inputGroup: {
-    marginBottom: 15,
+    marginBottom: 12,
   },
   input: {
-    backgroundColor: "#f5f5f5",
-    padding: 15,
+    padding: 14,
     borderRadius: 10,
-    fontSize: 16,
-  },
-  inputError: {
+    fontSize: 15,
     borderWidth: 1,
-    borderColor: "#ff3f6c",
   },
   errorText: {
-    color: "#ff3f6c",
     fontSize: 12,
-    marginTop: 5,
-    marginLeft: 5,
+    marginTop: 4,
+    marginLeft: 4,
   },
   passwordContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f5f5f5",
     borderRadius: 10,
+    borderWidth: 1,
   },
   passwordInput: {
     flex: 1,
-    padding: 15,
-    fontSize: 16,
+    padding: 14,
+    fontSize: 15,
   },
   eyeIcon: {
-    padding: 15,
+    padding: 14,
   },
   button: {
-    backgroundColor: "#ff3f6c",
     padding: 15,
     borderRadius: 10,
     alignItems: "center",
-    marginTop: 20,
+    marginTop: 14,
   },
   buttonText: {
-    color: "#fff",
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "bold",
   },
   loginLink: {
-    marginTop: 20,
+    marginTop: 18,
     alignItems: "center",
   },
   loginText: {
-    color: "#ff3f6c",
-    fontSize: 16,
+    fontSize: 14,
+    fontWeight: "600",
   },
 });

@@ -1,13 +1,3 @@
-/**
- * YouMayAlsoLikeSection.tsx
- * Horizontal scrollable "You May Also Like" recommendation section.
- *
- * - Personalized when userId is provided (browsing/wishlist/purchase signals)
- * - Falls back to newest active in-stock products for anonymous/new users
- * - Reuses the same card style as RecentlyViewedSection and ContinueShoppingSection
- * - Fails silently — never crashes the parent screen
- */
-
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -23,13 +13,11 @@ import {
   fetchRecommendations,
   RecommendedProduct,
 } from "@/utils/recommendationService";
+import { useTheme } from "@/theme";
 
 interface YouMayAlsoLikeSectionProps {
-  /** Current product ID — excluded from recommendations */
   currentProductId?: string;
-  /** Logged-in user ID — enables personalization */
   userId?: string;
-  /** Number of recommendations to show (default 10) */
   limit?: number;
 }
 
@@ -39,6 +27,7 @@ export default function YouMayAlsoLikeSection({
   limit = 10,
 }: YouMayAlsoLikeSectionProps) {
   const router = useRouter();
+  const { theme } = useTheme();
   const [products, setProducts] = useState<RecommendedProduct[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -51,7 +40,7 @@ export default function YouMayAlsoLikeSection({
         const data = await fetchRecommendations(userId, currentProductId, limit);
         if (!cancelled) setProducts(data);
       } catch {
-        // fetchRecommendations already handles errors silently
+        // Handled silently
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -60,26 +49,24 @@ export default function YouMayAlsoLikeSection({
     load();
 
     return () => {
-      cancelled = true; // prevent state update on unmounted component
+      cancelled = true;
     };
   }, [userId, currentProductId, limit]);
 
-  // Loading state
   if (isLoading) {
     return (
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>YOU MAY ALSO LIKE</Text>
-        <ActivityIndicator size="small" color="#ff3f6c" style={styles.loader} />
+        <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>YOU MAY ALSO LIKE</Text>
+        <ActivityIndicator size="small" color={theme.colors.primary} style={styles.loader} />
       </View>
     );
   }
 
-  // Empty state — hide section entirely (same pattern as RecentlyViewedSection)
   if (products.length === 0) return null;
 
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>YOU MAY ALSO LIKE</Text>
+      <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>YOU MAY ALSO LIKE</Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -88,7 +75,14 @@ export default function YouMayAlsoLikeSection({
         {products.map((product) => (
           <TouchableOpacity
             key={product._id}
-            style={styles.card}
+            style={[
+              styles.card,
+              {
+                backgroundColor: theme.colors.card,
+                borderColor: theme.colors.border,
+                borderWidth: 1,
+              },
+            ]}
             onPress={() => router.push(`/product/${product._id}`)}
             activeOpacity={0.85}
           >
@@ -96,16 +90,16 @@ export default function YouMayAlsoLikeSection({
               source={{ uri: product.images?.[0] }}
               style={styles.image}
             />
-            <Text style={styles.brand} numberOfLines={1}>
+            <Text style={[styles.brand, { color: theme.colors.textTertiary }]} numberOfLines={1}>
               {product.brand}
             </Text>
-            <Text style={styles.name} numberOfLines={2}>
+            <Text style={[styles.name, { color: theme.colors.textPrimary }]} numberOfLines={2}>
               {product.name}
             </Text>
             <View style={styles.priceRow}>
-              <Text style={styles.price}>₹{product.price}</Text>
+              <Text style={[styles.price, { color: theme.colors.textPrimary }]}>₹{product.price}</Text>
               {product.discount ? (
-                <Text style={styles.discount}>{product.discount}</Text>
+                <Text style={[styles.discount, { color: theme.colors.primary }]}>{product.discount}</Text>
               ) : null}
             </View>
           </TouchableOpacity>
@@ -115,7 +109,6 @@ export default function YouMayAlsoLikeSection({
   );
 }
 
-// Styles match RecentlyViewedSection and ContinueShoppingSection exactly
 const styles = StyleSheet.create({
   section: {
     paddingHorizontal: 15,
@@ -125,7 +118,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#3e3e3e",
     marginBottom: 12,
     letterSpacing: 0.5,
   },
@@ -139,31 +131,23 @@ const styles = StyleSheet.create({
   card: {
     width: 130,
     marginRight: 12,
-    backgroundColor: "#fff",
     borderRadius: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 2,
-    elevation: 3,
     overflow: "hidden",
     paddingBottom: 8,
   },
   image: {
     width: 130,
     height: 155,
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
+    borderTopLeftRadius: 7,
+    borderTopRightRadius: 7,
   },
   brand: {
     fontSize: 11,
-    color: "#888",
     paddingHorizontal: 6,
     marginTop: 6,
   },
   name: {
     fontSize: 12,
-    color: "#3e3e3e",
     paddingHorizontal: 6,
     marginTop: 2,
   },
@@ -177,10 +161,8 @@ const styles = StyleSheet.create({
   price: {
     fontSize: 13,
     fontWeight: "bold",
-    color: "#3e3e3e",
   },
   discount: {
     fontSize: 11,
-    color: "#ff3f6c",
   },
 });

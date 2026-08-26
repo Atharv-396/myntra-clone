@@ -10,16 +10,19 @@ import {
   User,
   Package,
   Heart,
-  CreditCard,
-  MapPin,
   Settings,
   LogOut,
   ChevronRight,
   Clock,
   Bell,
+  Sun,
+  Moon,
+  Smartphone,
+  Check,
 } from "lucide-react-native";
 import React from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme, ThemeMode } from "@/theme";
 
 const menuItems = [
   { icon: Package, label: "Orders", route: "/orders" },
@@ -29,73 +32,161 @@ const menuItems = [
   { icon: Settings, label: "Notification Settings", route: "/notification-settings" },
 ];
 
+const THEME_OPTIONS: {
+  mode: ThemeMode;
+  label: string;
+  sublabel: string;
+  icon: typeof Sun;
+}[] = [
+  {
+    mode: "system",
+    label: "System Default",
+    sublabel: "Match device setting",
+    icon: Smartphone,
+  },
+  {
+    mode: "light",
+    label: "Light Mode",
+    sublabel: "Clean & bright",
+    icon: Sun,
+  },
+  {
+    mode: "dark",
+    label: "Dark Mode",
+    sublabel: "Easy on the eyes",
+    icon: Moon,
+  },
+];
+
 export default function Profile() {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { theme, themeMode, setThemeMode, systemTheme } = useTheme();
+
   const handleLogout = async () => {
     await logout();
     router.replace("/");
   };
 
-  if (!user) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Profile</Text>
-        </View>
-        <View style={styles.emptyState}>
-          <User size={64} color="#ff3f6c" />
-          <Text style={styles.emptyTitle}>
-            Please login to view your profile
-          </Text>
-          <TouchableOpacity
-            style={styles.loginButton}
-            onPress={() => router.push("/login")}
-          >
-            <Text style={styles.loginButtonText}>LOGIN</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
-
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Profile</Text>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider }]}>
+        <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>Profile</Text>
       </View>
 
       <ScrollView style={styles.content}>
-        <View style={styles.userInfo}>
-          <View style={styles.avatar}>
-            <User size={40} color="#fff" />
+        {/* User Card */}
+        {user ? (
+          <View style={[styles.userInfo, { backgroundColor: theme.colors.card }]}>
+            <View style={[styles.avatar, { backgroundColor: theme.colors.primary }]}>
+              <User size={40} color={theme.colors.primaryText} />
+            </View>
+            <View style={styles.userDetails}>
+              <Text style={[styles.userName, { color: theme.colors.textPrimary }]}>{user.name}</Text>
+              <Text style={[styles.userEmail, { color: theme.colors.textSecondary }]}>{user.email}</Text>
+            </View>
           </View>
-          <View style={styles.userDetails}>
-            <Text style={styles.userName}>{user.name}</Text>
-            <Text style={styles.userEmail}>{user.email}</Text>
-          </View>
-        </View>
-
-        <View style={styles.menuSection}>
-          {menuItems.map((item, index) => (
+        ) : (
+          <View style={[styles.guestCard, { backgroundColor: theme.colors.card }]}>
+            <User size={48} color={theme.colors.primary} />
+            <Text style={[styles.guestTitle, { color: theme.colors.textPrimary }]}>
+              Welcome to Myntra
+            </Text>
+            <Text style={[styles.guestSubtitle, { color: theme.colors.textSecondary }]}>
+              Login to view orders, saved items and synced settings
+            </Text>
             <TouchableOpacity
-              key={index}
-              style={styles.menuItem}
-              onPress={() => router.push(item.route as any)}
+              style={[styles.loginButton, { backgroundColor: theme.colors.primary }]}
+              onPress={() => router.push("/login")}
             >
-              <View style={styles.menuItemLeft}>
-                <item.icon size={24} color="#3e3e3e" />
-                <Text style={styles.menuItemLabel}>{item.label}</Text>
-              </View>
-              <ChevronRight size={24} color="#3e3e3e" />
+              <Text style={[styles.loginButtonText, { color: theme.colors.primaryText }]}>LOGIN / SIGNUP</Text>
             </TouchableOpacity>
-          ))}
+          </View>
+        )}
+
+        {/* Appearance / Theme Selector */}
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>APPEARANCE</Text>
+        </View>
+        <View style={[styles.cardGroup, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
+          {THEME_OPTIONS.map((opt, index) => {
+            const isSelected = themeMode === opt.mode;
+            const Icon = opt.icon;
+            const subtext =
+              opt.mode === "system"
+                ? `System (${systemTheme === "dark" ? "Dark" : "Light"})`
+                : opt.sublabel;
+
+            return (
+              <TouchableOpacity
+                key={opt.mode}
+                style={[
+                  styles.themeOptionRow,
+                  index < THEME_OPTIONS.length - 1 && [styles.rowBorder, { borderBottomColor: theme.colors.divider }],
+                  isSelected && { backgroundColor: theme.isDark ? "#252525" : "#FFF7F9" },
+                ]}
+                onPress={() => setThemeMode(opt.mode)}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.iconCircle, { backgroundColor: isSelected ? theme.colors.primary : theme.colors.surfaceSecondary }]}>
+                  <Icon size={18} color={isSelected ? "#FFF" : theme.colors.icon} />
+                </View>
+                <View style={styles.themeTextContainer}>
+                  <Text style={[styles.themeOptionLabel, { color: theme.colors.textPrimary }, isSelected && { fontWeight: "700" }]}>
+                    {opt.label}
+                  </Text>
+                  <Text style={[styles.themeOptionSub, { color: theme.colors.textTertiary }]}>
+                    {subtext}
+                  </Text>
+                </View>
+                {isSelected ? (
+                  <View style={[styles.checkCircle, { backgroundColor: theme.colors.primary }]}>
+                    <Check size={14} color="#FFF" />
+                  </View>
+                ) : (
+                  <View style={[styles.radioOutline, { borderColor: theme.colors.border }]} />
+                )}
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <LogOut size={24} color="#ff3f6c" />
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
+        {/* Menu Section */}
+        {user && (
+          <>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>ACCOUNT & SETTINGS</Text>
+            </View>
+            <View style={[styles.cardGroup, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
+              {menuItems.map((item, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    styles.menuItem,
+                    index < menuItems.length - 1 && [styles.rowBorder, { borderBottomColor: theme.colors.divider }],
+                  ]}
+                  onPress={() => router.push(item.route as any)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.menuItemLeft}>
+                    <item.icon size={22} color={theme.colors.icon} />
+                    <Text style={[styles.menuItemLabel, { color: theme.colors.textPrimary }]}>{item.label}</Text>
+                  </View>
+                  <ChevronRight size={20} color={theme.colors.textTertiary} />
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TouchableOpacity
+              style={[styles.logoutButton, { borderColor: theme.colors.primary, backgroundColor: theme.colors.card }]}
+              onPress={handleLogout}
+              activeOpacity={0.7}
+            >
+              <LogOut size={20} color={theme.colors.primary} />
+              <Text style={[styles.logoutText, { color: theme.colors.primary }]}>Logout</Text>
+            </TouchableOpacity>
+          </>
+        )}
       </ScrollView>
     </View>
   );
@@ -104,110 +195,156 @@ export default function Profile() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
   },
   header: {
     padding: 15,
     paddingTop: 50,
-    backgroundColor: "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "bold",
-    color: "#3e3e3e",
   },
   content: {
     flex: 1,
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    color: "#3e3e3e",
-    marginTop: 20,
-    marginBottom: 20,
-  },
-  loginButton: {
-    backgroundColor: "#ff3f6c",
-    paddingHorizontal: 40,
-    paddingVertical: 15,
-    borderRadius: 10,
-  },
-  loginButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
   },
   userInfo: {
     flexDirection: "row",
     alignItems: "center",
     padding: 20,
-    backgroundColor: "#fff",
+    marginBottom: 10,
   },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "#ff3f6c",
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     justifyContent: "center",
     alignItems: "center",
   },
   userDetails: {
     marginLeft: 15,
+    flex: 1,
   },
   userName: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "bold",
-    color: "#3e3e3e",
-    marginBottom: 5,
+    marginBottom: 4,
   },
   userEmail: {
-    fontSize: 14,
-    color: "#666",
+    fontSize: 13,
   },
-  menuSection: {
-    marginTop: 20,
+  guestCard: {
+    padding: 24,
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  guestTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginTop: 12,
+    marginBottom: 6,
+  },
+  guestSubtitle: {
+    fontSize: 13,
+    textAlign: "center",
+    marginBottom: 18,
+    lineHeight: 18,
+  },
+  loginButton: {
+    paddingHorizontal: 36,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  loginButtonText: {
+    fontSize: 14,
+    fontWeight: "bold",
+    letterSpacing: 0.5,
+  },
+  sectionHeader: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: "700",
+    letterSpacing: 1,
+  },
+  cardGroup: {
+    marginHorizontal: 12,
+    borderRadius: 12,
+    overflow: "hidden",
+    borderWidth: 1,
+  },
+  themeOptionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  rowBorder: {
+    borderBottomWidth: 1,
+  },
+  iconCircle: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 14,
+  },
+  themeTextContainer: {
+    flex: 1,
+  },
+  themeOptionLabel: {
+    fontSize: 15,
+    fontWeight: "500",
+    marginBottom: 2,
+  },
+  themeOptionSub: {
+    fontSize: 12,
+  },
+  checkCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  radioOutline: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
   },
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 15,
-    backgroundColor: "#fff",
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    padding: 16,
   },
   menuItemLeft: {
     flexDirection: "row",
     alignItems: "center",
   },
   menuItemLabel: {
-    fontSize: 16,
-    color: "#3e3e3e",
-    marginLeft: 15,
+    fontSize: 15,
+    fontWeight: "500",
+    marginLeft: 14,
   },
   logoutButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    padding: 15,
-    marginTop: 20,
-    marginHorizontal: 15,
+    padding: 14,
+    marginVertical: 20,
+    marginHorizontal: 12,
     borderRadius: 10,
-    backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: "#ff3f6c",
+    gap: 8,
   },
   logoutText: {
-    marginLeft: 10,
-    fontSize: 16,
-    color: "#ff3f6c",
+    fontSize: 15,
     fontWeight: "bold",
   },
 });

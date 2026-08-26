@@ -7,6 +7,7 @@ import { useRouter } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
 import { useAuth } from "@/context/AuthContext";
 import { fetchPreferences, updatePreferences, NotificationPrefs } from "@/utils/notificationApi";
+import { useTheme } from "@/theme";
 
 type PrefKey = keyof NotificationPrefs;
 
@@ -24,6 +25,7 @@ const SETTINGS: { key: PrefKey; label: string; description: string }[] = [
 export default function NotificationSettingsScreen() {
   const { user } = useAuth();
   const router = useRouter();
+  const { theme } = useTheme();
 
   const [prefs, setPrefs] = useState<NotificationPrefs | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -46,7 +48,6 @@ export default function NotificationSettingsScreen() {
   const handleToggle = async (key: PrefKey, newValue: boolean) => {
     if (!user || !prefs || updating) return;
 
-    // Optimistic update
     const prevValue = prefs[key];
     setPrefs((p) => p ? { ...p, [key]: newValue } : p);
     setUpdating(key);
@@ -55,7 +56,6 @@ export default function NotificationSettingsScreen() {
       const updated = await updatePreferences(user._id, { [key]: newValue });
       setPrefs(updated);
     } catch (e) {
-      // Revert on failure
       setPrefs((p) => p ? { ...p, [key]: prevValue } : p);
       Alert.alert("Failed to update", "Please try again.");
     } finally {
@@ -65,17 +65,21 @@ export default function NotificationSettingsScreen() {
 
   if (!user) {
     return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-            <ChevronLeft size={24} color="#3e3e3e" />
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider }]}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
+            <ChevronLeft size={24} color={theme.colors.icon} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Notification Settings</Text>
+          <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>Notification Settings</Text>
         </View>
         <View style={styles.centerState}>
-          <Text style={styles.loginText}>Login to manage notification settings</Text>
-          <TouchableOpacity style={styles.loginBtn} onPress={() => router.push("/login")}>
-            <Text style={styles.loginBtnText}>LOGIN</Text>
+          <Text style={[styles.loginText, { color: theme.colors.textSecondary }]}>Login to manage notification settings</Text>
+          <TouchableOpacity
+            style={[styles.loginBtn, { backgroundColor: theme.colors.primary }]}
+            onPress={() => router.push("/login")}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.loginBtnText, { color: theme.colors.primaryText }]}>LOGIN</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -83,49 +87,61 @@ export default function NotificationSettingsScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <ChevronLeft size={24} color="#3e3e3e" />
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider }]}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
+          <ChevronLeft size={24} color={theme.colors.icon} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Notification Settings</Text>
+        <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>Notification Settings</Text>
       </View>
 
       {isLoading ? (
         <View style={styles.centerState}>
-          <ActivityIndicator size="large" color="#ff3f6c" />
+          <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
       ) : (
         <ScrollView style={styles.content}>
-          <Text style={styles.sectionNote}>
+          <Text style={[styles.sectionNote, { color: theme.colors.textSecondary }]}>
             Choose which notifications you want to receive on this device.
           </Text>
 
-          <View style={styles.settingsCard}>
+          <View
+            style={[
+              styles.settingsCard,
+              {
+                backgroundColor: theme.colors.card,
+                borderColor: theme.colors.border,
+                borderWidth: 1,
+              },
+            ]}
+          >
             {SETTINGS.map((setting, index) => (
               <View
                 key={setting.key}
                 style={[
                   styles.row,
-                  index < SETTINGS.length - 1 && styles.rowBorder,
+                  index < SETTINGS.length - 1 && [styles.rowBorder, { borderBottomColor: theme.colors.divider }],
                 ]}
               >
                 <View style={styles.rowLeft}>
-                  <Text style={styles.rowLabel}>{setting.label}</Text>
-                  <Text style={styles.rowDesc}>{setting.description}</Text>
+                  <Text style={[styles.rowLabel, { color: theme.colors.textPrimary }]}>{setting.label}</Text>
+                  <Text style={[styles.rowDesc, { color: theme.colors.textTertiary }]}>{setting.description}</Text>
                 </View>
                 <Switch
                   value={prefs ? prefs[setting.key] : true}
                   onValueChange={(val) => handleToggle(setting.key, val)}
                   disabled={updating === setting.key}
-                  trackColor={{ false: "#e0e0e0", true: "#ffb3c6" }}
-                  thumbColor={prefs?.[setting.key] ? "#ff3f6c" : "#fff"}
+                  trackColor={{
+                    false: theme.isDark ? "#3A3A3A" : "#E0E0E0",
+                    true: theme.isDark ? "#8A243D" : "#FFB3C6",
+                  }}
+                  thumbColor={prefs?.[setting.key] ? theme.colors.primary : "#FFF"}
                 />
               </View>
             ))}
           </View>
 
-          <Text style={styles.footerNote}>
+          <Text style={[styles.footerNote, { color: theme.colors.textTertiary }]}>
             You can always change these settings later. Some critical notifications
             like order confirmations may still be sent per our policy.
           </Text>
@@ -136,21 +152,21 @@ export default function NotificationSettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f5f5f5" },
-  header: { flexDirection: "row", alignItems: "center", padding: 15, paddingTop: 50, backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#f0f0f0" },
+  container: { flex: 1 },
+  header: { flexDirection: "row", alignItems: "center", padding: 15, paddingTop: 50, borderBottomWidth: 1 },
   backBtn: { marginRight: 10, padding: 4 },
-  headerTitle: { flex: 1, fontSize: 20, fontWeight: "bold", color: "#3e3e3e" },
-  centerState: { flex: 1, justifyContent: "center", alignItems: "center", padding: 30 },
-  loginText: { fontSize: 16, color: "#666", marginBottom: 20 },
-  loginBtn: { backgroundColor: "#ff3f6c", paddingHorizontal: 30, paddingVertical: 12, borderRadius: 8 },
-  loginBtnText: { color: "#fff", fontWeight: "bold", fontSize: 15 },
-  content: { flex: 1, padding: 15 },
-  sectionNote: { fontSize: 14, color: "#888", marginBottom: 15, lineHeight: 20 },
-  settingsCard: { backgroundColor: "#fff", borderRadius: 12, overflow: "hidden", shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 2, elevation: 2 },
+  headerTitle: { flex: 1, fontSize: 20, fontWeight: "bold" },
+  centerState: { flex: 1, justifyContent: "center", alignItems: "center", padding: 30, marginTop: 80 },
+  loginText: { fontSize: 16, marginBottom: 20 },
+  loginBtn: { paddingHorizontal: 30, paddingVertical: 12, borderRadius: 8 },
+  loginBtnText: { fontWeight: "bold", fontSize: 15 },
+  content: { flex: 1, padding: 14 },
+  sectionNote: { fontSize: 13, marginBottom: 14, lineHeight: 18 },
+  settingsCard: { borderRadius: 12, overflow: "hidden" },
   row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 14 },
-  rowBorder: { borderBottomWidth: 1, borderBottomColor: "#f5f5f5" },
+  rowBorder: { borderBottomWidth: 1 },
   rowLeft: { flex: 1, marginRight: 12 },
-  rowLabel: { fontSize: 15, fontWeight: "600", color: "#3e3e3e", marginBottom: 2 },
-  rowDesc: { fontSize: 13, color: "#888" },
-  footerNote: { fontSize: 12, color: "#aaa", marginTop: 20, marginBottom: 40, lineHeight: 18, textAlign: "center" },
+  rowLabel: { fontSize: 15, fontWeight: "600", marginBottom: 2 },
+  rowDesc: { fontSize: 12 },
+  footerNote: { fontSize: 12, marginTop: 20, marginBottom: 40, lineHeight: 18, textAlign: "center" },
 });

@@ -13,35 +13,19 @@ import {
   Image,
   ActivityIndicator,
 } from "react-native";
+import { useTheme } from "@/theme";
 
-// const wishlistItems = [
-//   {
-//     id: 1,
-//     name: "Premium Cotton T-Shirt",
-//     brand: "H&M",
-//     price: "₹799",
-//     discount: "40% OFF",
-//     image:
-//       "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&auto=format&fit=crop",
-//   },
-//   {
-//     id: 2,
-//     name: "Slim Fit Denim Jacket",
-//     brand: "Levis",
-//     price: "₹2999",
-//     discount: "30% OFF",
-//     image:
-//       "https://images.unsplash.com/photo-1523205771623-e0faa4d2813d?w=500&auto=format&fit=crop",
-//   },
-// ];
 export default function Wishlist() {
   const router = useRouter();
   const { user } = useAuth();
+  const { theme } = useTheme();
   const [wishlist, setwishlist] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+
   useEffect(() => {
     fetchproduct();
   }, [user]);
+
   const fetchproduct = async () => {
     if (user) {
       try {
@@ -56,66 +40,108 @@ export default function Wishlist() {
       }
     }
   };
-  const handledelete=async(itemid:any)=>{
+
+  const handledelete = async (itemid: any) => {
     try {
-      await axios.delete(`${BASE_URL}/wishlist/${itemid}`)
+      await axios.delete(`${BASE_URL}/wishlist/${itemid}`);
       fetchproduct();
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
-   
-  }
+  };
+
   if (!user) {
     return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Wishlist</Text>
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider }]}>
+          <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>Wishlist</Text>
         </View>
         <View style={styles.emptyState}>
-          <Heart size={64} color="#ff3f6c" />
-          <Text style={styles.emptyTitle}>
+          <Heart size={64} color={theme.colors.primary} />
+          <Text style={[styles.emptyTitle, { color: theme.colors.textPrimary }]}>
             Please login to view your wishlist
           </Text>
           <TouchableOpacity
-            style={styles.loginButton}
+            style={[styles.loginButton, { backgroundColor: theme.colors.primary }]}
             onPress={() => router.push("/login")}
+            activeOpacity={0.8}
           >
-            <Text style={styles.loginButtonText}>LOGIN</Text>
+            <Text style={[styles.loginButtonText, { color: theme.colors.primaryText }]}>LOGIN</Text>
           </TouchableOpacity>
         </View>
       </View>
     );
   }
+
   if (isLoading) {
     return (
-      <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="#ff3f6c" />
+      <View style={[styles.loaderContainer, { backgroundColor: theme.colors.background }]}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
     );
   }
+
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Wishlist</Text>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider }]}>
+        <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>Wishlist</Text>
       </View>
 
       <ScrollView style={styles.content}>
-        {wishlist?.map((item:any) => (
-          <View key={item._id} style={styles.wishlistItem}>
-            <Image  source={{ uri: item.productId.images[0] }} style={styles.itemImage} />
-            <View style={styles.itemInfo}>
-              <Text style={styles.brandName}>{item.productId.brand}</Text>
-              <Text style={styles.itemName}>{item.productId.name}</Text>
-              <View style={styles.priceContainer}>
-                <Text style={styles.price}>{item.productId.price}</Text>
-                <Text style={styles.discount}>{item.productId.discount}</Text>
-              </View>
-            </View>
-            <TouchableOpacity style={styles.removeButton} onPress={()=>handledelete(item._id)}>
-              <Trash2 size={24} color="#ff3f6c" />
+        {wishlist?.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Heart size={56} color={theme.colors.textTertiary} />
+            <Text style={[styles.emptyTitle, { color: theme.colors.textPrimary }]}>Your wishlist is empty</Text>
+            <Text style={{ color: theme.colors.textSecondary, marginBottom: 20 }}>Explore items and tap the heart icon to save them</Text>
+            <TouchableOpacity
+              style={[styles.loginButton, { backgroundColor: theme.colors.primary }]}
+              onPress={() => router.push("/")}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.loginButtonText, { color: theme.colors.primaryText }]}>DISCOVER NOW</Text>
             </TouchableOpacity>
           </View>
-        ))}
+        ) : (
+          wishlist?.map((item: any) => (
+            <View
+              key={item._id}
+              style={[
+                styles.wishlistItem,
+                {
+                  backgroundColor: theme.colors.card,
+                  borderColor: theme.colors.border,
+                  borderWidth: 1,
+                },
+              ]}
+            >
+              <TouchableOpacity
+                onPress={() => item.productId?._id && router.push(`/product/${item.productId._id}`)}
+                activeOpacity={0.8}
+              >
+                <Image source={{ uri: item.productId?.images?.[0] }} style={styles.itemImage} />
+              </TouchableOpacity>
+              <View style={styles.itemInfo}>
+                <Text style={[styles.brandName, { color: theme.colors.textTertiary }]}>{item.productId?.brand}</Text>
+                <Text style={[styles.itemName, { color: theme.colors.textPrimary }]} numberOfLines={2}>
+                  {item.productId?.name}
+                </Text>
+                <View style={styles.priceContainer}>
+                  <Text style={[styles.price, { color: theme.colors.textPrimary }]}>₹{item.productId?.price}</Text>
+                  {item.productId?.discount && (
+                    <Text style={[styles.discount, { color: theme.colors.primary }]}>{item.productId?.discount}</Text>
+                  )}
+                </View>
+              </View>
+              <TouchableOpacity
+                style={styles.removeButton}
+                onPress={() => handledelete(item._id)}
+                activeOpacity={0.7}
+              >
+                <Trash2 size={20} color={theme.colors.primary} />
+              </TouchableOpacity>
+            </View>
+          ))
+        )}
       </ScrollView>
     </View>
   );
@@ -126,23 +152,18 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#fff",
   },
   container: {
     flex: 1,
-    backgroundColor: "#fff",
   },
   header: {
     padding: 15,
     paddingTop: 50,
-    backgroundColor: "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "bold",
-    color: "#3e3e3e",
   },
   content: {
     flex: 1,
@@ -152,38 +173,28 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
+    padding: 40,
+    marginTop: 60,
   },
   emptyTitle: {
     fontSize: 18,
-    color: "#3e3e3e",
-    marginTop: 20,
-    marginBottom: 20,
+    fontWeight: "bold",
+    marginTop: 16,
+    marginBottom: 8,
   },
   loginButton: {
-    backgroundColor: "#ff3f6c",
-    paddingHorizontal: 40,
-    paddingVertical: 15,
-    borderRadius: 10,
+    paddingHorizontal: 36,
+    paddingVertical: 12,
+    borderRadius: 8,
   },
   loginButtonText: {
-    color: "#fff",
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "bold",
   },
   wishlistItem: {
     flexDirection: "row",
-    backgroundColor: "#fff",
     borderRadius: 10,
-    marginBottom: 15,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    marginBottom: 12,
     overflow: "hidden",
   },
   itemImage: {
@@ -192,34 +203,34 @@ const styles = StyleSheet.create({
   },
   itemInfo: {
     flex: 1,
-    padding: 15,
+    padding: 12,
+    justifyContent: "center",
   },
   brandName: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 5,
+    fontSize: 12,
+    marginBottom: 3,
   },
   itemName: {
-    fontSize: 16,
-    color: "#3e3e3e",
-    marginBottom: 10,
+    fontSize: 14,
+    fontWeight: "500",
+    marginBottom: 8,
   },
   priceContainer: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 8,
   },
   price: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "bold",
-    color: "#3e3e3e",
-    marginRight: 10,
   },
   discount: {
-    fontSize: 14,
-    color: "#ff3f6c",
+    fontSize: 12,
+    fontWeight: "600",
   },
   removeButton: {
-    padding: 15,
+    paddingHorizontal: 16,
     justifyContent: "center",
+    alignItems: "center",
   },
 });
