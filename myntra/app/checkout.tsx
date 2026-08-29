@@ -2,7 +2,7 @@ import { useAuth } from "@/context/AuthContext";
 import axios from "axios";
 import BASE_URL from "@/config/api";
 import { useRouter } from "expo-router";
-import { CreditCard, MapPin, Truck, CircleAlert, ChevronLeft } from "lucide-react-native";
+import { CreditCard, MapPin, Truck, CircleAlert, ChevronLeft, ShieldCheck, Check, Banknote } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
   View, Text, StyleSheet, ScrollView, TextInput,
@@ -10,15 +10,40 @@ import {
 } from "react-native";
 import { fetchCheckoutSummary, CheckoutSummary } from "@/utils/cartService";
 import { useTheme } from "@/theme";
+import CashfreeCheckoutModal from "@/components/CashfreeCheckoutModal";
+import {
+  createCashfreePaymentOrder,
+  verifyCashfreePayment,
+  CashfreeOrderResponse,
+} from "@/utils/paymentService";
 
 export default function Checkout() {
   const [loading, setLoading] = useState(false);
   const [summaryLoading, setSummaryLoading] = useState(true);
   const [summary, setSummary] = useState<CheckoutSummary | null>(null);
   const [summaryError, setSummaryError] = useState<string | null>(null);
+
+  // Dynamic Shipping Address State
+  const [fullName, setFullName] = useState("John Doe");
+  const [address1, setAddress1] = useState("123 Main Street");
+  const [address2, setAddress2] = useState("Apt 4B");
+  const [city, setCity] = useState("Bengaluru");
+  const [stateName, setStateName] = useState("Karnataka");
+  const [postalCode, setPostalCode] = useState("560001");
+  const [phone, setPhone] = useState("9876543210");
+
+  // Payment Method Selection
+  const [paymentMethod, setPaymentMethod] = useState<"CASHFREE" | "COD">("CASHFREE");
+
+  // Cashfree Modal State
+  const [cashfreeModalVisible, setCashfreeModalVisible] = useState(false);
+  const [cashfreeOrderData, setCashfreeOrderData] = useState<CashfreeOrderResponse | null>(null);
+
   const router = useRouter();
   const { user } = useAuth();
   const { theme } = useTheme();
+
+  const formattedAddress = `${fullName}, ${address1}, ${address2 ? address2 + ", " : ""}${city}, ${stateName} - ${postalCode}, Phone: ${phone}`;
 
   useEffect(() => {
     if (!user) return;
@@ -50,18 +75,78 @@ export default function Checkout() {
       Alert.alert("Cannot place order", "Please resolve cart issues before proceeding.");
       return;
     }
+
+    if (!address1.trim() || !city.trim() || !postalCode.trim()) {
+      Alert.alert("Incomplete Address", "Please provide complete shipping address details.");
+      return;
+    }
+
     setLoading(true);
+
+    if (paymentMethod === "CASHFREE") {
+      // Step 1: Initiate Cashfree Payment
+      try {
+        const cfOrder = await createCashfreePaymentOrder(user._id, formattedAddress, phone);
+        setCashfreeOrderData(cfOrder);
+        setCashfreeModalVisible(true);
+      } catch (error: any) {
+        console.error("Cashfree Order creation failed:", error);
+        Alert.alert("Payment Initiation Failed", error?.response?.data?.message || error.message || "Failed to connect to Cashfree");
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      // Cash On Delivery Flow
+      try {
+        await axios.post(`${BASE_URL}/order/create/${user._id}`, {
+          shippingAddress: formattedAddress,
+          paymentMethod: "Cash on Delivery",
+        });
+        Alert.alert("Order Placed", "Your order has been placed successfully via Cash on Delivery!");
+        router.push("/orders");
+      } catch (error: any) {
+        Alert.alert("Order failed", error?.response?.data?.message || "Something went wrong");
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  // Step 2: Handle Cashfree Payment Success Callback
+  const handleCashfreeSuccess = async (paymentId: string) => {
+    if (!user || !cashfreeOrderData) return;
+    setCashfreeModalVisible(false);
+    setLoading(true);
+
     try {
-      await axios.post(`${BASE_URL}/order/create/${user._id}`, {
-        shippingAddress: "123 Main Street, Apt 4B, New York, NY, 10001",
-        paymentMethod: "Card",
+      const verifyRes = await verifyCashfreePayment({
+        orderId: cashfreeOrderData.orderId,
+        userId: user._id,
+        shippingAddress: formattedAddress,
+        paymentMethod: "CASHFREE",
+        paymentId,
       });
-      router.push("/orders");
+
+      if (verifyRes.success) {
+        Alert.alert(
+          "Payment Successful 🎉",
+          `Order #${verifyRes.orderId.slice(-6).toUpperCase()} placed successfully! Total: ₹${verifyRes.total}`,
+          [{ text: "VIEW ORDERS", onPress: () => router.push("/orders") }]
+        );
+      } else {
+        Alert.alert("Payment Verification Failed", verifyRes.message || "Please contact support.");
+      }
     } catch (error: any) {
-      Alert.alert("Order failed", error?.response?.data?.message || "Something went wrong");
+      console.error("Payment Verification Error:", error);
+      Alert.alert("Payment Verification Error", error?.response?.data?.message || "Could not verify payment with server.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCashfreeFailure = (errorMsg: string) => {
+    setCashfreeModalVisible(false);
+    Alert.alert("Payment Incomplete", errorMsg || "The transaction was cancelled or failed.");
   };
 
   if (!user) {
@@ -108,32 +193,37 @@ export default function Checkout() {
               style={[styles.input, { backgroundColor: theme.colors.surfaceSecondary, color: theme.colors.textPrimary }]}
               placeholder="Full Name"
               placeholderTextColor={theme.colors.placeholder}
-              defaultValue="John Doe"
+              value={fullName}
+              onChangeText={setFullName}
             />
             <TextInput
               style={[styles.input, { backgroundColor: theme.colors.surfaceSecondary, color: theme.colors.textPrimary }]}
               placeholder="Address Line 1"
               placeholderTextColor={theme.colors.placeholder}
-              defaultValue="123 Main Street"
+              value={address1}
+              onChangeText={setAddress1}
             />
             <TextInput
               style={[styles.input, { backgroundColor: theme.colors.surfaceSecondary, color: theme.colors.textPrimary }]}
-              placeholder="Address Line 2"
+              placeholder="Address Line 2 (Optional)"
               placeholderTextColor={theme.colors.placeholder}
-              defaultValue="Apt 4B"
+              value={address2}
+              onChangeText={setAddress2}
             />
             <View style={styles.row}>
               <TextInput
                 style={[styles.input, styles.halfInput, { backgroundColor: theme.colors.surfaceSecondary, color: theme.colors.textPrimary }]}
                 placeholder="City"
                 placeholderTextColor={theme.colors.placeholder}
-                defaultValue="New York"
+                value={city}
+                onChangeText={setCity}
               />
               <TextInput
                 style={[styles.input, styles.halfInput, { backgroundColor: theme.colors.surfaceSecondary, color: theme.colors.textPrimary }]}
                 placeholder="State"
                 placeholderTextColor={theme.colors.placeholder}
-                defaultValue="NY"
+                value={stateName}
+                onChangeText={setStateName}
               />
             </View>
             <View style={styles.row}>
@@ -141,46 +231,83 @@ export default function Checkout() {
                 style={[styles.input, styles.halfInput, { backgroundColor: theme.colors.surfaceSecondary, color: theme.colors.textPrimary }]}
                 placeholder="Postal Code"
                 placeholderTextColor={theme.colors.placeholder}
-                defaultValue="10001"
+                value={postalCode}
+                onChangeText={setPostalCode}
+                keyboardType="numeric"
               />
               <TextInput
                 style={[styles.input, styles.halfInput, { backgroundColor: theme.colors.surfaceSecondary, color: theme.colors.textPrimary }]}
-                placeholder="Country"
+                placeholder="Mobile Number"
                 placeholderTextColor={theme.colors.placeholder}
-                defaultValue="United States"
+                value={phone}
+                onChangeText={setPhone}
+                keyboardType="phone-pad"
               />
             </View>
           </View>
         </View>
 
-        {/* Payment */}
+        {/* Payment Methods */}
         <View style={[styles.section, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
           <View style={styles.sectionHeader}>
             <CreditCard size={22} color={theme.colors.primary} />
-            <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>Payment Method</Text>
+            <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>Payment Options</Text>
           </View>
-          <View style={styles.form}>
-            <TextInput
-              style={[styles.input, { backgroundColor: theme.colors.surfaceSecondary, color: theme.colors.textPrimary }]}
-              placeholder="Card Number"
-              placeholderTextColor={theme.colors.placeholder}
-              defaultValue="**** **** **** 4242"
-            />
-            <View style={styles.row}>
-              <TextInput
-                style={[styles.input, styles.halfInput, { backgroundColor: theme.colors.surfaceSecondary, color: theme.colors.textPrimary }]}
-                placeholder="Expiry Date"
-                placeholderTextColor={theme.colors.placeholder}
-                defaultValue="12/25"
-              />
-              <TextInput
-                style={[styles.input, styles.halfInput, { backgroundColor: theme.colors.surfaceSecondary, color: theme.colors.textPrimary }]}
-                placeholder="CVV"
-                placeholderTextColor={theme.colors.placeholder}
-                defaultValue="***"
-              />
+
+          {/* Cashfree Option */}
+          <TouchableOpacity
+            style={[
+              styles.paymentOption,
+              { borderColor: paymentMethod === "CASHFREE" ? theme.colors.primary : theme.colors.border },
+              paymentMethod === "CASHFREE" && { backgroundColor: theme.isDark ? "#2A1D24" : "#FFF5F7" },
+            ]}
+            onPress={() => setPaymentMethod("CASHFREE")}
+            activeOpacity={0.8}
+          >
+            <View style={styles.optionLeft}>
+              <View style={[styles.radioCircle, { borderColor: paymentMethod === "CASHFREE" ? theme.colors.primary : theme.colors.textTertiary }]}>
+                {paymentMethod === "CASHFREE" && <View style={[styles.radioDot, { backgroundColor: theme.colors.primary }]} />}
+              </View>
+              <View style={{ flex: 1 }}>
+                <View style={styles.optionTitleRow}>
+                  <Text style={[styles.optionTitle, { color: theme.colors.textPrimary }]}>Cashfree Payments</Text>
+                  <View style={styles.secureTag}>
+                    <ShieldCheck size={12} color="#2E7D32" />
+                    <Text style={styles.secureTagText}>SECURE</Text>
+                  </View>
+                </View>
+                <Text style={[styles.optionSub, { color: theme.colors.textSecondary }]}>
+                  UPI (GPay/PhonePe/Paytm), Cards, NetBanking, Wallets
+                </Text>
+              </View>
             </View>
-          </View>
+          </TouchableOpacity>
+
+          {/* COD Option */}
+          <TouchableOpacity
+            style={[
+              styles.paymentOption,
+              { borderColor: paymentMethod === "COD" ? theme.colors.primary : theme.colors.border },
+              paymentMethod === "COD" && { backgroundColor: theme.isDark ? "#2A1D24" : "#FFF5F7" },
+            ]}
+            onPress={() => setPaymentMethod("COD")}
+            activeOpacity={0.8}
+          >
+            <View style={styles.optionLeft}>
+              <View style={[styles.radioCircle, { borderColor: paymentMethod === "COD" ? theme.colors.primary : theme.colors.textTertiary }]}>
+                {paymentMethod === "COD" && <View style={[styles.radioDot, { backgroundColor: theme.colors.primary }]} />}
+              </View>
+              <View style={{ flex: 1 }}>
+                <View style={styles.optionTitleRow}>
+                  <Text style={[styles.optionTitle, { color: theme.colors.textPrimary }]}>Cash on Delivery (COD)</Text>
+                  <Banknote size={16} color={theme.colors.textSecondary} />
+                </View>
+                <Text style={[styles.optionSub, { color: theme.colors.textSecondary }]}>
+                  Pay with cash upon delivery at your doorstep
+                </Text>
+              </View>
+            </View>
+          </TouchableOpacity>
         </View>
 
         {/* Order Summary */}
@@ -253,6 +380,7 @@ export default function Checkout() {
         </View>
       </ScrollView>
 
+      {/* Footer / Action Button */}
       <View style={[styles.footer, { backgroundColor: theme.colors.card, borderTopColor: theme.colors.divider }]}>
         <TouchableOpacity
           style={[
@@ -268,11 +396,24 @@ export default function Checkout() {
             <ActivityIndicator color={theme.colors.primaryText} />
           ) : (
             <Text style={[styles.placeOrderButtonText, { color: theme.colors.primaryText }]}>
-              {summary?.canCheckout === false ? "RESOLVE CART ISSUES" : "PLACE ORDER"}
+              {summary?.canCheckout === false
+                ? "RESOLVE CART ISSUES"
+                : paymentMethod === "CASHFREE"
+                ? `PAY VIA CASHFREE • ₹${summary?.grandTotal || ""}`
+                : `PLACE ORDER (COD) • ₹${summary?.grandTotal || ""}`}
             </Text>
           )}
         </TouchableOpacity>
       </View>
+
+      {/* Cashfree Payment Modal */}
+      <CashfreeCheckoutModal
+        visible={cashfreeModalVisible}
+        orderData={cashfreeOrderData}
+        onSuccess={handleCashfreeSuccess}
+        onFailure={handleCashfreeFailure}
+        onClose={() => setCashfreeModalVisible(false)}
+      />
     </View>
   );
 }
@@ -294,6 +435,59 @@ const styles = StyleSheet.create({
   input: { padding: 12, borderRadius: 8, fontSize: 14, marginBottom: 8 },
   row: { flexDirection: "row", justifyContent: "space-between" },
   halfInput: { width: "48%" },
+  paymentOption: {
+    padding: 14,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    marginBottom: 10,
+  },
+  optionLeft: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+  },
+  radioCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 2,
+  },
+  radioDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  optionTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 4,
+  },
+  optionTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  secureTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    backgroundColor: "#E8F5E9",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  secureTagText: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: "#2E7D32",
+  },
+  optionSub: {
+    fontSize: 12,
+    lineHeight: 16,
+  },
   errorBox: { flexDirection: "row", alignItems: "center", padding: 12, borderRadius: 8, marginBottom: 12, gap: 8 },
   errorBoxText: { fontSize: 13, flex: 1 },
   warningBox: { flexDirection: "row", alignItems: "flex-start", padding: 10, borderRadius: 8, marginBottom: 10, gap: 8 },
@@ -313,3 +507,4 @@ const styles = StyleSheet.create({
   disabledButton: { opacity: 0.6 },
   placeOrderButtonText: { fontSize: 15, fontWeight: "bold" },
 });
+

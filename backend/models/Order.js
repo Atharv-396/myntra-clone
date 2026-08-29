@@ -27,6 +27,10 @@ const OrderSchema = new mongoose.Schema(
     total: Number,
     shippingAddress: String,
     paymentMethod: String,
+    paymentStatus: { type: String, default: "Pending" },
+    cashfreeOrderId: String,
+    cashfreePaymentId: String,
+    paymentSessionId: String,
     tracking: TrackingSchema,
   },
   { timestamps: true }

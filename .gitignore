@@ -1,14 +1,39 @@
-# Ignore node_modules in both frontend and backend
-myntra/node_modules/
-backend/node_modules/
+# ─────────────────────────────────────────────────────────────────────────────
+# Environment variables & sensitive credentials (NEVER commit to git)
+# ─────────────────────────────────────────────────────────────────────────────
+.env
+.env.*
+*.env
+**/.env
+**/.env.*
+**/*.env
+!.env.example
+!**/.env.example
 
-# Ignore build folders if any
-myntra/build/
-backend/build/
+# ─────────────────────────────────────────────────────────────────────────────
+# Node dependencies
+# ─────────────────────────────────────────────────────────────────────────────
+node_modules/
+**/node_modules/
 
-# Ignore environment files
-myntra/.env
-backend/.env
-
-# Optional: Ignore other unnecessary files
+# ─────────────────────────────────────────────────────────────────────────────
+# Build & temporary files
+# ─────────────────────────────────────────────────────────────────────────────
+dist/
+build/
+web-build/
+.expo/
+**/.expo/
 *.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# ─────────────────────────────────────────────────────────────────────────────
+# OS & Editor files
+# ─────────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.pem
+*.key
+*.tsbuildinfo

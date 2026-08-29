@@ -18,6 +18,7 @@ const OrderRoutes = require("./routes/OrderRoutes");
 const RecentlyViewedRoutes = require("./routes/RecentlyViewedRoutes");
 const RecommendationRoutes = require("./routes/RecommendationRoutes");
 const NotificationRoutes = require("./routes/NotificationRoutes");
+const PaymentRoutes = require("./routes/PaymentRoutes");
 const NotificationPreference = require("./models/NotificationPreference");
 const { processReceipts, scanAbandonedCarts } = require("./services/notificationService");
 
@@ -77,6 +78,7 @@ app.use("/order", OrderRoutes);
 app.use("/recently-viewed", RecentlyViewedRoutes);
 app.use("/recommendations", RecommendationRoutes);
 app.use("/api/notifications", NotificationRoutes);
+app.use("/payment", PaymentRoutes);
 
 function startBackgroundJobs() {
   const abandonedCartCron = process.env.NOTIFICATION_ABANDONED_CART_CRON || "*/30 * * * *";
