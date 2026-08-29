@@ -43,6 +43,9 @@ export default function ProductDetails() {
         setIsLoading(true);
         const res = await axios.get(`${BASE_URL}/product/${id}`);
         setproduct(res.data);
+        if (res.data?.sizes && res.data.sizes.length > 0) {
+          setSelectedSize(res.data.sizes[0]);
+        }
       } catch (error) {
         console.log(error);
         setIsLoading(false);
@@ -77,29 +80,27 @@ export default function ProductDetails() {
   };
 
   const handleAddToBag = async () => {
-    if (!selectedSize) {
-      Alert.alert("Please select a size");
-      return;
-    }
+    const sizeToUse = selectedSize || (product?.sizes && product.sizes.length > 0 ? product.sizes[0] : "M");
     setLoading(true);
     try {
       if (user) {
-        await addToCart(user._id, product._id, selectedSize, product.color || "Default", 1);
+        await addToCart(user._id, product._id, sizeToUse, product.color || "Default", 1);
       } else {
         await addToGuestCart({
           productId: product._id,
           name: product.name,
           brand: product.brand,
           priceAtAdd: product.price,
-          size: selectedSize,
+          size: sizeToUse,
           color: product.color || "Default",
           image: product.images?.[0] || "",
           quantity: 1,
         });
       }
-      Alert.alert("Added to bag!");
-    } catch (error) {
-      console.log(error);
+      Alert.alert("Success", "Added to bag!");
+    } catch (error: any) {
+      console.log("Add to bag error:", error);
+      Alert.alert("Error", error?.response?.data?.message || "Failed to add to bag");
     } finally {
       setLoading(false);
     }
