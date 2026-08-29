@@ -54,22 +54,25 @@ export default function ContinueShoppingSection({
     }, [loadItems])
   );
 
-  const handleAddToBag = async (productId: string) => {
+  const handleAddToBag = async (product: any) => {
     if (!user) {
       router.push("/login");
       return;
     }
+    const productId = product._id || product;
+    const size = product.sizes && product.sizes.length > 0 ? product.sizes[0] : "M";
     try {
       setAddingToBag(productId);
       await axios.post(`${BASE_URL}/bag`, {
         userId: user._id,
         productId,
-        size: "M",
+        size,
         quantity: 1,
       });
-      Alert.alert("Added to bag!");
-    } catch (e) {
+      Alert.alert("Success", "Added to bag!");
+    } catch (e: any) {
       console.log("Add to bag error:", e);
+      Alert.alert("Error", e?.response?.data?.message || "Could not add to bag");
     } finally {
       setAddingToBag(null);
     }
@@ -152,7 +155,7 @@ export default function ContinueShoppingSection({
               <View style={styles.actions}>
                 <TouchableOpacity
                   style={[styles.bagButton, { backgroundColor: theme.colors.primary }]}
-                  onPress={() => handleAddToBag(product._id)}
+                  onPress={() => handleAddToBag(product)}
                   disabled={addingToBag === product._id}
                   activeOpacity={0.8}
                 >

@@ -2,7 +2,7 @@ import { useAuth } from "@/context/AuthContext";
 import axios from "axios";
 import BASE_URL from "@/config/api";
 import { useRouter } from "expo-router";
-import { CreditCard, MapPin, Truck, CircleAlert, ChevronLeft, ShieldCheck, Check, Banknote } from "lucide-react-native";
+import { CreditCard, MapPin, Truck, CircleAlert, ChevronLeft, ShieldCheck, Check, Banknote, ShoppingBag } from "lucide-react-native";
 import React, { useEffect, useState } from "react";
 import {
   View, Text, StyleSheet, ScrollView, TextInput,
@@ -166,6 +166,35 @@ export default function Checkout() {
             activeOpacity={0.8}
           >
             <Text style={[styles.actionButtonText, { color: theme.colors.primaryText }]}>LOGIN</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  if (!summaryLoading && (summaryError?.toLowerCase().includes("empty") || (summary && summary.items.length === 0))) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider }]}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
+            <ChevronLeft size={24} color={theme.colors.icon} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>Checkout</Text>
+        </View>
+        <View style={styles.centerState}>
+          <ShoppingBag size={56} color={theme.colors.textTertiary} />
+          <Text style={[{ color: theme.colors.textPrimary, fontSize: 18, fontWeight: "bold", marginTop: 16, marginBottom: 6 }]}>
+            Your Bag is Empty
+          </Text>
+          <Text style={{ color: theme.colors.textSecondary, marginBottom: 20, textAlign: "center" }}>
+            Add items to your bag before proceeding to checkout.
+          </Text>
+          <TouchableOpacity
+            style={[styles.actionButton, { backgroundColor: theme.colors.primary }]}
+            onPress={() => router.push("/(tabs)/bag")}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.actionButtonText, { color: theme.colors.primaryText }]}>VIEW BAG</Text>
           </TouchableOpacity>
         </View>
       </View>
