@@ -89,7 +89,7 @@ export default function NotificationsScreen() {
       );
       setUnreadCount((c) => Math.max(0, c - 1));
     }
-    const route = getNotificationRoute(notif.data);
+    const route = getNotificationRoute(notif.data || {});
     if (route) router.push(route as any);
   };
 
@@ -217,7 +217,7 @@ export default function NotificationsScreen() {
                     {n.body}
                   </Text>
                   <Text style={[styles.cardTime, { color: theme.colors.textTertiary }]}>
-                    {new Date(n.sentAt).toLocaleDateString(undefined, {
+                    {new Date(n.sentAt || n.createdAt || Date.now()).toLocaleDateString(undefined, {
                       month: "short",
                       day: "numeric",
                       hour: "2-digit",

@@ -229,3 +229,54 @@ export function getNotificationRoute(data: Record<string, any>): string | null {
       return null;
   }
 }
+
+export interface NotificationItem {
+  _id: string;
+  userId: string;
+  category: string;
+  type: string;
+  title: string;
+  body: string;
+  data?: Record<string, any>;
+  readAt?: string;
+  sentAt?: string;
+  status?: string;
+  createdAt?: string;
+}
+
+export interface FetchNotificationsResponse {
+  notifications: NotificationItem[];
+  unreadCount: number;
+}
+
+export async function fetchNotifications(userId: string): Promise<FetchNotificationsResponse> {
+  try {
+    const res = await axios.get(`${BASE_URL}/api/notifications/${userId}`);
+    if (res.data && Array.isArray(res.data.notifications)) {
+      return res.data;
+    }
+    const items = Array.isArray(res.data) ? res.data : [];
+    const unread = items.filter((n: any) => !n.readAt && n.status !== "READ").length;
+    return { notifications: items, unreadCount: unread };
+  } catch (err: any) {
+    console.log("[Notifications] fetchNotifications error:", err.message);
+    return { notifications: [], unreadCount: 0 };
+  }
+}
+
+export async function markNotificationRead(id: string): Promise<void> {
+  try {
+    await axios.patch(`${BASE_URL}/api/notifications/${id}/read`);
+  } catch (err: any) {
+    console.log("[Notifications] markNotificationRead error:", err.message);
+  }
+}
+
+export async function markAllRead(userId: string): Promise<void> {
+  try {
+    await axios.patch(`${BASE_URL}/api/notifications/read-all/${userId}`);
+  } catch (err: any) {
+    console.log("[Notifications] markAllRead error:", err.message);
+  }
+}
+

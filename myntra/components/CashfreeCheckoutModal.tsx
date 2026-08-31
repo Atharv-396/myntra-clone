@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Modal,
   View,
@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
   Platform,
 } from "react-native";
-import { X, ShieldCheck, CheckCircle2, AlertCircle, CreditCard } from "lucide-react-native";
+import { X, ShieldCheck, CreditCard, AlertCircle, RefreshCw } from "lucide-react-native";
 import { WebView } from "react-native-webview";
 import { useTheme } from "@/theme";
 import { CashfreeOrderResponse } from "@/utils/paymentService";
@@ -21,6 +21,12 @@ interface CashfreeCheckoutModalProps {
   onClose: () => void;
 }
 
+declare global {
+  interface Window {
+    Cashfree?: any;
+  }
+}
+
 export default function CashfreeCheckoutModal({
   visible,
   orderData,
@@ -29,141 +35,216 @@ export default function CashfreeCheckoutModal({
   onClose,
 }: CashfreeCheckoutModalProps) {
   const { theme } = useTheme();
-  const [loading, setLoading] = useState(false);
+  const [webSdkLoading, setWebSdkLoading] = useState(true);
+  const [webSdkError, setWebSdkError] = useState<string | null>(null);
+  const webSdkTriggered = useRef(false);
+
+  const isSandbox =
+    orderData?.environment === "SANDBOX" || orderData?.environment?.toLowerCase() === "sandbox";
+
+  // Web Platform: Load and initialize Cashfree JS SDK v3
+  useEffect(() => {
+    if (Platform.OS !== "web" || !visible || !orderData) {
+      webSdkTriggered.current = false;
+      return;
+    }
+
+    let isMounted = true;
+
+    const loadCashfreeSdk = async () => {
+      setWebSdkLoading(true);
+      setWebSdkError(null);
+
+      // Helper to initialize Cashfree checkout
+      const initCheckout = () => {
+        if (!window.Cashfree) {
+          if (isMounted) setWebSdkError("Cashfree SDK could not be loaded.");
+          return;
+        }
+
+        try {
+          const cashfree = window.Cashfree({
+            mode: isSandbox ? "sandbox" : "production",
+          });
+
+          cashfree
+            .checkout({
+              paymentSessionId: orderData.paymentSessionId,
+              redirectTarget: "_modal",
+            })
+            .then((result: any) => {
+              if (result?.error) {
+                console.log("[Cashfree Web SDK] Checkout error/dropped:", result.error);
+                onFailure(result.error.message || "Payment cancelled or failed");
+              } else if (result?.paymentDetails) {
+                console.log("[Cashfree Web SDK] Checkout success:", result.paymentDetails);
+                const paymentId =
+                  result.paymentDetails.paymentId ||
+                  result.paymentDetails.paymentMessage ||
+                  `cf_pay_${Date.now()}`;
+                onSuccess(paymentId);
+              } else if (result?.redirect) {
+                console.log("[Cashfree Web SDK] Redirection triggered");
+              }
+            })
+            .catch((err: any) => {
+              console.error("[Cashfree Web SDK] Checkout exception:", err);
+              if (isMounted) {
+                setWebSdkError(err?.message || "Cashfree checkout encounter an error.");
+              }
+            });
+        } catch (e: any) {
+          console.error("[Cashfree Web SDK] Init error:", e);
+          if (isMounted) {
+            setWebSdkError(e?.message || "Could not initialize Cashfree gateway.");
+          }
+        } finally {
+          if (isMounted) setWebSdkLoading(false);
+        }
+      };
+
+      if (window.Cashfree) {
+        initCheckout();
+        return;
+      }
+
+      // Dynamically load Cashfree JS SDK v3 script into DOM
+      const existingScript = document.getElementById("cashfree-js-sdk");
+      if (!existingScript) {
+        const script = document.createElement("script");
+        script.id = "cashfree-js-sdk";
+        script.src = "https://sdk.cashfree.com/js/v3/cashfree.js";
+        script.async = true;
+        script.onload = () => {
+          if (isMounted) initCheckout();
+        };
+        script.onerror = () => {
+          if (isMounted) {
+            setWebSdkLoading(false);
+            setWebSdkError("Failed to connect to Cashfree payment server. Check your network.");
+          }
+        };
+        document.body.appendChild(script);
+      } else {
+        existingScript.addEventListener("load", () => {
+          if (isMounted) initCheckout();
+        });
+      }
+    };
+
+    if (!webSdkTriggered.current) {
+      webSdkTriggered.current = true;
+      loadCashfreeSdk();
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [visible, orderData, isSandbox]);
 
   if (!orderData) return null;
 
-  const isSandbox = orderData.environment === "SANDBOX" || orderData.isSimulated;
-
-  // HTML content for rendering Cashfree Drop-in / Checkout interface in WebView or Web
-  const cashfreeHtml = `
+  // HTML template for Mobile / Expo WebView with Cashfree JS SDK v3
+  const nativeCheckoutHtml = `
     <!DOCTYPE html>
     <html lang="en">
     <head>
       <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Cashfree Payment</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+      <title>Cashfree Secure Checkout</title>
       <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
       <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-          margin: 0;
-          padding: 20px;
-          background: #fdfdfd;
-          color: #333;
+          background: #f8f9fa;
+          color: #212529;
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          min-height: 80vh;
+          min-height: 100vh;
+          padding: 16px;
         }
-        .card {
-          background: #ffffff;
-          border-radius: 12px;
-          box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-          padding: 24px;
-          max-width: 400px;
-          width: 100%;
+        .loader-box {
           text-align: center;
+          padding: 24px;
         }
-        .badge {
-          display: inline-block;
-          background: #E8F5E9;
-          color: #2E7D32;
-          font-size: 12px;
-          font-weight: 700;
-          padding: 4px 10px;
-          border-radius: 20px;
-          margin-bottom: 12px;
+        .spinner {
+          width: 44px;
+          height: 44px;
+          border: 4px solid #f3f3f3;
+          border-top: 4px solid #FF3F6C;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+          margin: 0 auto 16px auto;
         }
-        .amount {
-          font-size: 32px;
-          font-weight: 800;
-          color: #111;
-          margin: 8px 0;
-        }
-        .order-id {
-          font-size: 13px;
-          color: #666;
-          margin-bottom: 20px;
-        }
-        .btn {
-          background: #FF3F6C;
-          color: white;
-          border: none;
-          padding: 14px 20px;
-          border-radius: 8px;
-          font-size: 16px;
-          font-weight: 700;
-          cursor: pointer;
-          width: 100%;
-          margin-top: 10px;
-          transition: background 0.2s;
-        }
-        .btn:hover {
-          background: #E73959;
-        }
-        .btn-secondary {
-          background: #f1f3f6;
-          color: #444;
-          margin-top: 8px;
-        }
-        .footer {
-          margin-top: 20px;
-          font-size: 12px;
-          color: #888;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 6px;
-        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loading-title { font-size: 16px; font-weight: 700; color: #282C3F; margin-bottom: 6px; }
+        .loading-sub { font-size: 13px; color: #686B78; }
+        #cashfree-dropin-container { width: 100%; max-width: 480px; min-height: 450px; }
       </style>
     </head>
     <body>
-      <div class="card">
-        <div class="badge">CASHFREE SECURE PAYMENT</div>
-        <div class="amount">?${orderData.orderAmount}</div>
-        <div class="order-id">Order ID: ${orderData.orderId}</div>
-
-        <button class="btn" onclick="triggerPaymentSuccess()">PAY ?${orderData.orderAmount} (SANDBOX)</button>
-        <button class="btn btn-secondary" onclick="triggerPaymentCancel()">Cancel</button>
-
-        <div class="footer">
-          ?? 128-bit Encrypted by Cashfree Payments
-        </div>
+      <div id="loader" class="loader-box">
+        <div class="spinner"></div>
+        <div class="loading-title">Connecting to Cashfree Gateway</div>
+        <div class="loading-sub">Securing session for ₹${orderData.orderAmount}...</div>
       </div>
 
+      <div id="cashfree-dropin-container"></div>
+
       <script>
-        function triggerPaymentSuccess() {
-          const payload = JSON.stringify({
-            status: "SUCCESS",
-            orderId: "${orderData.orderId}",
-            paymentId: "cf_pay_" + Date.now()
-          });
-          if (window.ReactNativeWebView) {
-            window.ReactNativeWebView.postMessage(payload);
-          } else {
-            window.parent.postMessage(payload, "*");
+        function postToReactNative(data) {
+          if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
+            window.ReactNativeWebView.postMessage(JSON.stringify(data));
           }
         }
 
-        function triggerPaymentCancel() {
-          const payload = JSON.stringify({
-            status: "CANCELLED",
-            orderId: "${orderData.orderId}"
-          });
-          if (window.ReactNativeWebView) {
-            window.ReactNativeWebView.postMessage(payload);
-          } else {
-            window.parent.postMessage(payload, "*");
+        window.onload = function() {
+          try {
+            if (!window.Cashfree) {
+              postToReactNative({ status: "FAILED", message: "Cashfree SDK failed to initialize." });
+              return;
+            }
+
+            var cashfree = window.Cashfree({
+              mode: "${isSandbox ? "sandbox" : "production"}"
+            });
+
+            document.getElementById("loader").style.display = "none";
+
+            cashfree.checkout({
+              paymentSessionId: "${orderData.paymentSessionId}",
+              redirectTarget: "_self"
+            }).then(function(result) {
+              if (result && result.error) {
+                postToReactNative({
+                  status: "FAILED",
+                  message: result.error.message || "Payment cancelled or failed"
+                });
+              } else if (result && result.paymentDetails) {
+                postToReactNative({
+                  status: "SUCCESS",
+                  paymentId: result.paymentDetails.paymentId || result.paymentDetails.paymentMessage || "cf_pay_success"
+                });
+              }
+            }).catch(function(err) {
+              postToReactNative({
+                status: "FAILED",
+                message: err ? (err.message || String(err)) : "Checkout encounter error"
+              });
+            });
+          } catch(e) {
+            postToReactNative({ status: "FAILED", message: e.message || "Error opening payment gateway" });
           }
-        }
+        };
       </script>
     </body>
     </html>
   `;
 
-  const handleMessage = (event: any) => {
+  const handleWebViewMessage = (event: any) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
       if (data.status === "SUCCESS") {
@@ -171,10 +252,19 @@ export default function CashfreeCheckoutModal({
       } else if (data.status === "CANCELLED") {
         onClose();
       } else {
-        onFailure(data.message || "Payment failed");
+        onFailure(data.message || "Payment was not completed.");
       }
     } catch (err) {
-      console.log("WebView message parse error:", err);
+      console.log("[Cashfree Modal] Message parse error:", err);
+    }
+  };
+
+  const handleWebViewNavigationChange = (navState: any) => {
+    const url = navState.url || "";
+    // If Cashfree redirects to return_url containing order status or order_id
+    if (url.includes("/orders") || url.includes("order_id=")) {
+      // Payment completed and redirected to return URL
+      onSuccess(`cf_pay_${Date.now()}`);
     }
   };
 
@@ -204,7 +294,7 @@ export default function CashfreeCheckoutModal({
           </TouchableOpacity>
         </View>
 
-        {/* Web Platform / Fallback Native Sandbox Interface */}
+        {/* Web Platform Interface */}
         {Platform.OS === "web" ? (
           <View style={styles.webContainer}>
             <View
@@ -214,74 +304,83 @@ export default function CashfreeCheckoutModal({
               ]}
             >
               <View style={styles.badgeContainer}>
-                <CreditCard size={18} color={theme.colors.primary} />
+                <CreditCard size={20} color={theme.colors.primary} />
                 <Text style={[styles.gatewayName, { color: theme.colors.primary }]}>
                   Cashfree Gateway Checkout
                 </Text>
               </View>
 
               <Text style={[styles.amountLabel, { color: theme.colors.textSecondary }]}>
-                Total Payable
+                Total Amount Payable
               </Text>
               <Text style={[styles.amountValue, { color: theme.colors.textPrimary }]}>
-                ?{orderData.orderAmount}
+                ₹{orderData.orderAmount}
               </Text>
               <Text style={[styles.orderMeta, { color: theme.colors.textTertiary }]}>
-                Session: {orderData.paymentSessionId.slice(0, 20)}...
+                Order: {orderData.orderId}
               </Text>
+
+              {webSdkLoading && (
+                <View style={styles.loadingBox}>
+                  <ActivityIndicator size="large" color={theme.colors.primary} />
+                  <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>
+                    Launching Cashfree Dropin Modal...
+                  </Text>
+                </View>
+              )}
+
+              {webSdkError && (
+                <View style={styles.errorBox}>
+                  <AlertCircle size={20} color={theme.colors.error} />
+                  <Text style={[styles.errorText, { color: theme.colors.error }]}>
+                    {webSdkError}
+                  </Text>
+                  <TouchableOpacity
+                    style={[styles.retryBtn, { backgroundColor: theme.colors.primary }]}
+                    onPress={() => {
+                      webSdkTriggered.current = false;
+                      setWebSdkError(null);
+                    }}
+                  >
+                    <RefreshCw size={14} color="#FFF" />
+                    <Text style={styles.retryBtnText}>Retry Gateway</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
 
               <View style={[styles.divider, { backgroundColor: theme.colors.divider }]} />
 
               <TouchableOpacity
-                style={[styles.payButton, { backgroundColor: theme.colors.primary }]}
-                onPress={() => {
-                  setLoading(true);
-                  setTimeout(() => {
-                    setLoading(false);
-                    onSuccess(`cf_pay_${Date.now()}`);
-                  }, 1200);
-                }}
-                disabled={loading}
-                activeOpacity={0.85}
-              >
-                {loading ? (
-                  <ActivityIndicator color={theme.colors.primaryText} />
-                ) : (
-                  <View style={styles.payBtnContent}>
-                    <CheckCircle2 size={18} color={theme.colors.primaryText} />
-                    <Text
-                      style={[styles.payButtonText, { color: theme.colors.primaryText }]}
-                    >
-                      COMPLETE PAYMENT (?{orderData.orderAmount})
-                    </Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-
-              <TouchableOpacity
                 style={[styles.cancelButton, { borderColor: theme.colors.border }]}
-                onPress={() => onFailure("Payment cancelled by user")}
+                onPress={() => {
+                  onClose();
+                  onFailure("Payment cancelled by user");
+                }}
                 activeOpacity={0.7}
               >
                 <Text style={[styles.cancelButtonText, { color: theme.colors.textSecondary }]}>
-                  Cancel Payment
+                  Cancel and Return to Bag
                 </Text>
               </TouchableOpacity>
 
               <View style={styles.secureFooter}>
                 <ShieldCheck size={14} color="#00875A" />
                 <Text style={{ color: theme.colors.textTertiary, fontSize: 12 }}>
-                  Secured with 256-bit SSL encryption
+                  Protected with 256-bit Bank-Grade Encryption
                 </Text>
               </View>
             </View>
           </View>
         ) : (
+          /* Mobile Native WebView Platform */
           <WebView
             originWhitelist={["*"]}
-            source={{ html: cashfreeHtml }}
-            onMessage={handleMessage}
+            source={{ html: nativeCheckoutHtml }}
+            onMessage={handleWebViewMessage}
+            onNavigationStateChange={handleWebViewNavigationChange}
             style={styles.webView}
+            javaScriptEnabled={true}
+            domStorageEnabled={true}
             startInLoadingState={true}
             renderLoading={() => (
               <View style={styles.loadingContainer}>
@@ -359,7 +458,7 @@ const styles = StyleSheet.create({
   },
   paymentBox: {
     width: "100%",
-    maxWidth: 420,
+    maxWidth: 440,
     borderRadius: 16,
     borderWidth: 1,
     padding: 24,
@@ -368,13 +467,13 @@ const styles = StyleSheet.create({
   badgeContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 8,
     marginBottom: 16,
   },
   gatewayName: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "700",
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
   amountLabel: {
     fontSize: 13,
@@ -389,27 +488,37 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginBottom: 16,
   },
-  divider: {
-    width: "100%",
-    height: 1,
-    marginBottom: 20,
-  },
-  payButton: {
-    width: "100%",
-    paddingVertical: 14,
-    borderRadius: 10,
+  loadingBox: {
+    marginVertical: 20,
     alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 10,
   },
-  payBtnContent: {
-    flexDirection: "row",
+  errorBox: {
+    marginVertical: 16,
     alignItems: "center",
     gap: 8,
   },
-  payButtonText: {
-    fontSize: 15,
+  errorText: {
+    fontSize: 13,
+    textAlign: "center",
+  },
+  retryBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+    marginTop: 8,
+  },
+  retryBtnText: {
+    color: "#FFF",
     fontWeight: "700",
+    fontSize: 13,
+  },
+  divider: {
+    width: "100%",
+    height: 1,
+    marginVertical: 16,
   },
   cancelButton: {
     width: "100%",

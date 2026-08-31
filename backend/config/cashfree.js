@@ -1,24 +1,68 @@
 const crypto = require("crypto");
 
-const CASHFREE_ENV = (process.env.CASHFREE_ENVIRONMENT || "SANDBOX").toUpperCase();
-const CASHFREE_APP_ID = process.env.CASHFREE_APP_ID || "TEST_APP_ID";
-const CASHFREE_SECRET_KEY = process.env.CASHFREE_SECRET_KEY || "TEST_SECRET_KEY";
-const API_VERSION = "2023-08-01";
+/**
+ * Cashfree Payment Gateway Configuration
+ * Supports both generic PAYMENT_GATEWAY_* and provider-specific CASHFREE_* environment variables.
+ */
+function getCashfreeConfig() {
+  const env = (
+    process.env.PAYMENT_GATEWAY_ENVIRONMENT ||
+    process.env.CASHFREE_ENVIRONMENT ||
+    "SANDBOX"
+  ).toUpperCase();
 
-const BASE_URL =
-  CASHFREE_ENV === "PRODUCTION"
-    ? "https://api.cashfree.com/pg"
-    : "https://sandbox.cashfree.com/pg";
+  const appId =
+    process.env.PAYMENT_GATEWAY_KEY_ID ||
+    process.env.CASHFREE_APP_ID ||
+    "";
+
+  const secretKey =
+    process.env.PAYMENT_GATEWAY_KEY_SECRET ||
+    process.env.CASHFREE_SECRET_KEY ||
+    "";
+
+  const webhookSecret =
+    process.env.PAYMENT_WEBHOOK_SECRET ||
+    process.env.CASHFREE_WEBHOOK_SECRET ||
+    secretKey;
+
+  const baseUrl =
+    env === "PRODUCTION"
+      ? "https://api.cashfree.com/pg"
+      : "https://sandbox.cashfree.com/pg";
+
+  const apiVersion = "2023-08-01";
+
+  return {
+    env,
+    appId,
+    secretKey,
+    webhookSecret,
+    baseUrl,
+    apiVersion,
+    isConfigured: Boolean(appId && secretKey),
+  };
+}
 
 /**
  * Helper to make authenticated Cashfree PG API requests
+ * Safely handles and masks credentials in diagnostics.
  */
 async function cashfreeRequest(endpoint, method = "GET", body = null) {
-  const url = `${BASE_URL}${endpoint}`;
+  const config = getCashfreeConfig();
+
+  if (!config.isConfigured) {
+    const err = new Error("Cashfree API credentials are not configured in environment variables.");
+    err.status = 500;
+    err.code = "CONFIG_MISSING";
+    throw err;
+  }
+
+  const url = `${config.baseUrl}${endpoint}`;
   const headers = {
-    "x-client-id": CASHFREE_APP_ID,
-    "x-client-secret": CASHFREE_SECRET_KEY,
-    "x-api-version": API_VERSION,
+    "x-client-id": config.appId,
+    "x-client-secret": config.secretKey,
+    "x-api-version": config.apiVersion,
     "Content-Type": "application/json",
     Accept: "application/json",
   };
@@ -32,12 +76,30 @@ async function cashfreeRequest(endpoint, method = "GET", body = null) {
     options.body = JSON.stringify(body);
   }
 
-  const response = await fetch(url, options);
+  let response;
+  try {
+    response = await fetch(url, options);
+  } catch (netErr) {
+    console.error(`[Cashfree API] Network request failed to ${endpoint}:`, netErr.message);
+    const error = new Error(`Cashfree network failure: ${netErr.message}`);
+    error.status = 502;
+    error.code = "NETWORK_ERROR";
+    throw error;
+  }
+
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    const error = new Error(data.message || `Cashfree API error (${response.status})`);
+    // Log safe diagnostic info without exposing headers or secrets
+    console.error(
+      `[Cashfree PG API Error] Endpoint: ${endpoint} | HTTP Status: ${response.status} | Code: ${data.code || data.type || "UNKNOWN"} | Message: ${data.message || response.statusText}`
+    );
+
+    const error = new Error(
+      data.message || `Cashfree API request failed with status ${response.status}`
+    );
     error.status = response.status;
+    error.code = data.code || data.type || "CASHFREE_API_ERROR";
     error.data = data;
     throw error;
   }
@@ -47,6 +109,7 @@ async function cashfreeRequest(endpoint, method = "GET", body = null) {
 
 /**
  * Create Cashfree PG Order
+ * API version: 2023-08-01
  */
 async function createCashfreeOrder({
   orderId,
@@ -54,51 +117,49 @@ async function createCashfreeOrder({
   customerDetails,
   returnUrl,
   notifyUrl,
+  orderNote,
 }) {
-  const isMockCredentials =
-    !process.env.CASHFREE_APP_ID ||
-    process.env.CASHFREE_APP_ID.includes("TEST_") ||
-    process.env.CASHFREE_APP_ID === "your_payment_gateway_key_id";
+  const config = getCashfreeConfig();
 
-  if (isMockCredentials) {
-    console.log("[Cashfree Sandbox] Using simulated Cashfree order session for development testing");
-    const mockSessionId = `session_mock_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-    return {
-      orderId: orderId,
-      paymentSessionId: mockSessionId,
-      orderStatus: "ACTIVE",
-      orderAmount: orderAmount,
-      orderCurrency: "INR",
-      environment: CASHFREE_ENV,
-      isSimulated: true,
-    };
+  // Cashfree requires amount to have at most 2 decimal places and minimum 1.00 INR
+  const sanitizedAmount = parseFloat(Number(orderAmount).toFixed(2));
+  if (isNaN(sanitizedAmount) || sanitizedAmount <= 0) {
+    throw new Error("Order amount must be a positive number");
   }
+
+  // Format customer phone safely (10 digits)
+  const phone = (customerDetails.customerPhone || "").replace(/\D/g, "").slice(-10) || "9999999999";
 
   const payload = {
     order_id: orderId,
-    order_amount: orderAmount,
+    order_amount: sanitizedAmount,
     order_currency: "INR",
     customer_details: {
-      customer_id: customerDetails.customerId || "cust_guest",
+      customer_id: customerDetails.customerId || `cust_${Date.now()}`,
       customer_name: customerDetails.customerName || "Customer",
       customer_email: customerDetails.customerEmail || "customer@example.com",
-      customer_phone: customerDetails.customerPhone || "9999999999",
+      customer_phone: phone,
     },
     order_meta: {
-      return_url: returnUrl || `https://myntra.com/orders?order_id={order_id}`,
-      notify_url: notifyUrl,
+      return_url: returnUrl || undefined,
+      notify_url: notifyUrl || undefined,
     },
   };
+
+  if (orderNote) {
+    payload.order_note = orderNote;
+  }
 
   const result = await cashfreeRequest("/orders", "POST", payload);
 
   return {
     orderId: result.order_id,
+    cfOrderId: result.cf_order_id,
     paymentSessionId: result.payment_session_id,
     orderStatus: result.order_status,
     orderAmount: result.order_amount,
     orderCurrency: result.order_currency,
-    environment: CASHFREE_ENV,
+    environment: config.env,
     raw: result,
   };
 }
@@ -107,20 +168,6 @@ async function createCashfreeOrder({
  * Fetch Order Status from Cashfree
  */
 async function getCashfreeOrder(orderId) {
-  const isMock =
-    !process.env.CASHFREE_APP_ID ||
-    process.env.CASHFREE_APP_ID.includes("TEST_") ||
-    process.env.CASHFREE_APP_ID === "your_payment_gateway_key_id";
-
-  if (isMock || orderId.startsWith("cf_sim_") || orderId.includes("mock")) {
-    return {
-      order_id: orderId,
-      order_status: "PAID",
-      order_amount: 0,
-      isSimulated: true,
-    };
-  }
-
   return await cashfreeRequest(`/orders/${orderId}`, "GET");
 }
 
@@ -128,45 +175,49 @@ async function getCashfreeOrder(orderId) {
  * Fetch Order Payments from Cashfree
  */
 async function getCashfreeOrderPayments(orderId) {
-  const isMock =
-    !process.env.CASHFREE_APP_ID ||
-    process.env.CASHFREE_APP_ID.includes("TEST_") ||
-    process.env.CASHFREE_APP_ID === "your_payment_gateway_key_id";
-
-  if (isMock || orderId.startsWith("cf_sim_") || orderId.includes("mock")) {
-    return [
-      {
-        payment_id: `pay_mock_${Date.now()}`,
-        payment_status: "SUCCESS",
-        payment_amount: 0,
-        payment_method: { card: { channel: "visa" } },
-      },
-    ];
-  }
-
   return await cashfreeRequest(`/orders/${orderId}/payments`, "GET");
 }
 
 /**
- * Verify Webhook Signature using HMAC SHA256
+ * Verify Webhook Signature using HMAC-SHA256 and constant-time buffer comparison.
+ * Cashfree signature payload is: `${timestamp}${rawBody}`
  */
-function verifyCashfreeWebhookSignature(signature, rawBody, timestamp) {
+function verifyCashfreeWebhookSignature(signature, rawBody, timestamp, customSecret) {
+  if (!signature || !timestamp || rawBody === undefined || rawBody === null) {
+    return false;
+  }
+
   try {
-    const data = `${timestamp}${rawBody}`;
+    const config = getCashfreeConfig();
+    const secret = customSecret || config.webhookSecret;
+
+    if (!secret) {
+      console.warn("[Cashfree Webhook] Webhook secret not configured");
+      return false;
+    }
+
+    const payload = `${timestamp}${rawBody}`;
     const generatedSignature = crypto
-      .createHmac("sha256", CASHFREE_SECRET_KEY)
-      .update(data)
+      .createHmac("sha256", secret)
+      .update(payload)
       .digest("base64");
-    return generatedSignature === signature;
+
+    const sigBuffer = Buffer.from(signature, "utf8");
+    const genBuffer = Buffer.from(generatedSignature, "utf8");
+
+    if (sigBuffer.length !== genBuffer.length) {
+      return false;
+    }
+
+    return crypto.timingSafeEqual(sigBuffer, genBuffer);
   } catch (e) {
-    console.error("Webhook signature verification error:", e);
+    console.error("[Cashfree Webhook] Signature verification error:", e.message);
     return false;
   }
 }
 
 module.exports = {
-  CASHFREE_ENV,
-  CASHFREE_APP_ID,
+  getCashfreeConfig,
   createCashfreeOrder,
   getCashfreeOrder,
   getCashfreeOrderPayments,

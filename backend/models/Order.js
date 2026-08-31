@@ -28,6 +28,7 @@ const OrderSchema = new mongoose.Schema(
     shippingAddress: String,
     paymentMethod: String,
     paymentStatus: { type: String, default: "Pending" },
+    transactionId: { type: mongoose.Schema.Types.ObjectId, ref: "Transaction" },
     cashfreeOrderId: String,
     cashfreePaymentId: String,
     paymentSessionId: String,

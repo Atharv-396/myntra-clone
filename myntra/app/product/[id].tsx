@@ -88,13 +88,14 @@ export default function ProductDetails() {
       } else {
         await addToGuestCart({
           productId: product._id,
-          name: product.name,
-          brand: product.brand,
+          productName: product.name,
+          productBrand: product.brand,
           priceAtAdd: product.price,
           size: sizeToUse,
           color: product.color || "Default",
-          image: product.images?.[0] || "",
+          productImage: product.images?.[0] || "",
           quantity: 1,
+          addedAt: new Date().toISOString(),
         });
       }
       Alert.alert("Success", "Added to bag!");

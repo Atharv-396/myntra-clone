@@ -69,10 +69,19 @@ export default function Checkout() {
     load();
   }, [user]);
 
+  const handleBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace("/(tabs)/bag");
+    }
+  };
+
   const handlePlaceOrder = async () => {
     if (!user) { router.push("/login"); return; }
-    if (!summary || !summary.canCheckout) {
-      Alert.alert("Cannot place order", "Please resolve cart issues before proceeding.");
+    if (!summary || !summary.canCheckout || !summary.items || summary.items.length === 0) {
+      Alert.alert("Your bag is empty", "Please add items to your bag before proceeding to checkout.");
+      router.push("/(tabs)/bag");
       return;
     }
 
@@ -153,7 +162,7 @@ export default function Checkout() {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider }]}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
+          <TouchableOpacity onPress={handleBack} style={styles.backBtn} activeOpacity={0.7}>
             <ChevronLeft size={24} color={theme.colors.icon} />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>Checkout</Text>
@@ -176,7 +185,7 @@ export default function Checkout() {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider }]}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
+          <TouchableOpacity onPress={handleBack} style={styles.backBtn} activeOpacity={0.7}>
             <ChevronLeft size={24} color={theme.colors.icon} />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>Checkout</Text>
@@ -204,7 +213,7 @@ export default function Checkout() {
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider }]}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
+        <TouchableOpacity onPress={handleBack} style={styles.backBtn} activeOpacity={0.7}>
           <ChevronLeft size={24} color={theme.colors.icon} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>Checkout</Text>
