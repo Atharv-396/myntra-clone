@@ -5,6 +5,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef } from "react";
 import * as Notifications from "expo-notifications";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ThemeProvider, useTheme } from "@/theme";
 import { AuthProvider } from "@/context/AuthContext";
 import { getNotificationRoute } from "@/utils/notificationService";
@@ -95,10 +96,12 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <ThemeProvider>
-        <RootNavigation />
-      </ThemeProvider>
-    </AuthProvider>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <ThemeProvider>
+          <RootNavigation />
+        </ThemeProvider>
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }

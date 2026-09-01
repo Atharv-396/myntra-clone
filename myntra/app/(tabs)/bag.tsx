@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+﻿import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   View, Text, ScrollView, Image, TouchableOpacity,
   StyleSheet, ActivityIndicator, Alert, RefreshControl,
@@ -15,11 +15,13 @@ import { getGuestCart, addToGuestCart, removeFromGuestCart, updateGuestCartQuant
 import BASE_URL from "@/config/api";
 import axios from "axios";
 import { useTheme } from "@/theme";
+import { useResponsive } from "@/hooks/useResponsive";
 
 export default function Bag() {
   const router = useRouter();
   const { user } = useAuth();
   const { theme } = useTheme();
+  const { headerPaddingTop, footerPaddingBottom, isTablet } = useResponsive();
 
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [savedItems, setSavedItems] = useState<CartItem[]>([]);
@@ -161,7 +163,7 @@ export default function Bag() {
       const result = await validateCart(user._id);
       if (result.priceChanges.length > 0) {
         const names = result.priceChanges
-          .map((p) => `${p.productName}: ₹${p.oldPrice}→₹${p.newPrice}`)
+          .map((p) => `${p.productName}: â‚¹${p.oldPrice}â†’â‚¹${p.newPrice}`)
           .join("\n");
         Alert.alert("Price Updated", `Some prices have changed:\n${names}\n\nProceeding with new prices.`);
         setPriceChanges(result.priceChanges);
@@ -207,7 +209,7 @@ export default function Bag() {
     const guestTotal = guestItems.reduce((s, i) => s + (i.priceAtAdd || 0) * (i.quantity || 1), 0);
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider }]}>
+        <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider, paddingTop: headerPaddingTop }]}>
           <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>Shopping Bag</Text>
         </View>
 
@@ -250,7 +252,7 @@ export default function Bag() {
                     <Text style={[styles.brandName, { color: theme.colors.textTertiary }]}>{item.brand}</Text>
                     <Text style={[styles.itemName, { color: theme.colors.textPrimary }]}>{item.name}</Text>
                     <Text style={[styles.itemSize, { color: theme.colors.textSecondary }]}>Size: {item.size}</Text>
-                    <Text style={[styles.itemPrice, { color: theme.colors.textPrimary }]}>₹{item.priceAtAdd}</Text>
+                    <Text style={[styles.itemPrice, { color: theme.colors.textPrimary }]}>â‚¹{item.priceAtAdd}</Text>
                     <View style={styles.quantityContainer}>
                       <TouchableOpacity
                         style={[styles.quantityButton, { backgroundColor: theme.colors.surfaceSecondary }]}
@@ -276,7 +278,7 @@ export default function Bag() {
                 </View>
               ))}
             </ScrollView>
-            <View style={[styles.footer, { backgroundColor: theme.colors.card, borderTopColor: theme.colors.divider }]}>
+            <View style={[styles.footer, { backgroundColor: theme.colors.card, borderTopColor: theme.colors.divider, paddingBottom: footerPaddingBottom }]}>
               <View style={styles.totalContainer}>
                 <Text style={[styles.totalLabel, { color: theme.colors.textSecondary }]}>Estimated Total</Text>
                 <Text style={[styles.totalAmount, { color: theme.colors.primary }]}>₹{guestTotal}</Text>
@@ -306,7 +308,7 @@ export default function Bag() {
   if (cartItems.length === 0 && savedItems.length === 0) {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider }]}>
+        <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider, paddingTop: headerPaddingTop }]}>
           <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>Shopping Bag</Text>
         </View>
         <View style={styles.emptyState}>
@@ -354,7 +356,7 @@ export default function Bag() {
             <Text style={[styles.itemSize, { color: theme.colors.textSecondary }]}>Size: {item.size}</Text>
           ) : null}
 
-          <Text style={[styles.itemPrice, { color: theme.colors.textPrimary }]}>₹{product?.price}</Text>
+          <Text style={[styles.itemPrice, { color: theme.colors.textPrimary }]}>â‚¹{product?.price}</Text>
 
           {!isSavedSection && (
             <View style={styles.quantityContainer}>
@@ -416,7 +418,7 @@ export default function Bag() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider }]}>
+      <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider, paddingTop: headerPaddingTop }]}>
         <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>
           Shopping Bag ({cartItems.length})
         </Text>
@@ -447,21 +449,21 @@ export default function Bag() {
       </ScrollView>
 
       {cartItems.length > 0 && totals && (
-        <View style={[styles.footer, { backgroundColor: theme.colors.card, borderTopColor: theme.colors.divider }]}>
+        <View style={[styles.footer, { backgroundColor: theme.colors.card, borderTopColor: theme.colors.divider, paddingBottom: footerPaddingBottom }]}>
           <View style={styles.totalsBox}>
             <View style={styles.totalRow}>
               <Text style={[styles.totalLabel, { color: theme.colors.textSecondary }]}>Subtotal</Text>
-              <Text style={[styles.totalValue, { color: theme.colors.textPrimary }]}>₹{totals.subtotal}</Text>
+              <Text style={[styles.totalValue, { color: theme.colors.textPrimary }]}>â‚¹{totals.subtotal}</Text>
             </View>
             <View style={styles.totalRow}>
               <Text style={[styles.totalLabel, { color: theme.colors.textSecondary }]}>Shipping</Text>
               <Text style={[styles.totalValue, { color: theme.colors.textPrimary }]}>
-                {totals.shipping === 0 ? "FREE" : `₹${totals.shipping}`}
+                {totals.shipping === 0 ? "FREE" : `â‚¹${totals.shipping}`}
               </Text>
             </View>
             <View style={[styles.totalRow, styles.grandTotalRow, { borderTopColor: theme.colors.divider }]}>
               <Text style={[styles.grandTotalLabel, { color: theme.colors.textPrimary }]}>Total</Text>
-              <Text style={[styles.grandTotalValue, { color: theme.colors.primary }]}>₹{totals.grandTotal}</Text>
+              <Text style={[styles.grandTotalValue, { color: theme.colors.primary }]}>â‚¹{totals.grandTotal}</Text>
             </View>
           </View>
           <TouchableOpacity
@@ -480,7 +482,7 @@ export default function Bag() {
 const styles = StyleSheet.create({
   loaderContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
   container: { flex: 1 },
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 15, paddingTop: 50, borderBottomWidth: 1 },
+  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 15, paddingBottom: 12, borderBottomWidth: 1 },
   headerTitle: { fontSize: 22, fontWeight: "bold" },
   clearText: { fontSize: 14, fontWeight: "600" },
   content: { flex: 1 },

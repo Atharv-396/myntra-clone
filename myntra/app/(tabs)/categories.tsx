@@ -14,10 +14,12 @@ import { Search, X } from "lucide-react-native";
 import axios from "axios";
 import BASE_URL from "@/config/api";
 import { useTheme } from "@/theme";
+import { useResponsive } from "@/hooks/useResponsive";
 
 export default function CategoriesScreen() {
   const router = useRouter();
   const { theme } = useTheme();
+  const { headerPaddingTop, productGridColumns, width, isTablet, isDesktop } = useResponsive();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
@@ -98,6 +100,14 @@ export default function CategoriesScreen() {
     ? categories?.find((cat: any) => cat._id === selectedCategory)
     : null;
 
+  // Dynamic product card width based on screen size
+  const cardGap = 12;
+  const gridPadding = 24; // 12 on each side
+  const cardWidth = Math.floor((width - gridPadding - (productGridColumns - 1) * cardGap) / productGridColumns);
+  const cardImageHeight = Math.round(cardWidth * 1.2);
+  // Category card image height scales with screen
+  const categoryImageHeight = isDesktop ? 200 : isTablet ? 180 : 140;
+
   const renderProducts = (products: any) => {
     return products?.map((product: any) => (
       <TouchableOpacity
@@ -105,6 +115,7 @@ export default function CategoriesScreen() {
         style={[
           styles.productCard,
           {
+            width: cardWidth,
             backgroundColor: theme.colors.card,
             borderColor: theme.colors.border,
             borderWidth: 1,
@@ -113,7 +124,7 @@ export default function CategoriesScreen() {
         onPress={() => router.push(`/product/${product._id}`)}
         activeOpacity={0.85}
       >
-        <Image source={{ uri: product.images?.[0] }} style={styles.productImage} />
+        <Image source={{ uri: product.images?.[0] }} style={[styles.productImage, { height: cardImageHeight }]} />
         <View style={styles.productInfo}>
           <Text style={[styles.brandName, { color: theme.colors.textTertiary }]}>{product.brand}</Text>
           <Text style={[styles.productName, { color: theme.colors.textPrimary }]} numberOfLines={1}>
@@ -132,7 +143,7 @@ export default function CategoriesScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider }]}>
+      <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider, paddingTop: headerPaddingTop }]}>
         <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>Categories</Text>
       </View>
 
@@ -173,7 +184,7 @@ export default function CategoriesScreen() {
               >
                 <Image
                   source={{ uri: category.image }}
-                  style={styles.categoryImage}
+                  style={[styles.categoryImage, { height: categoryImageHeight }]}
                 />
                 <View style={styles.categoryInfo}>
                   <Text style={[styles.categoryName, { color: theme.colors.textPrimary }]}>{category.name}</Text>
@@ -265,8 +276,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    padding: 15,
-    paddingTop: 50,
+    paddingHorizontal: 15,
+    paddingBottom: 12,
     borderBottomWidth: 1,
   },
   headerTitle: {
@@ -304,7 +315,6 @@ const styles = StyleSheet.create({
   },
   categoryImage: {
     width: "100%",
-    height: 140,
   },
   categoryInfo: {
     padding: 12,
@@ -365,17 +375,15 @@ const styles = StyleSheet.create({
   productsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-between",
+    gap: 12,
   },
   productCard: {
-    width: "48.5%",
-    marginBottom: 12,
+    marginBottom: 0,
     borderRadius: 10,
     overflow: "hidden",
   },
   productImage: {
     width: "100%",
-    height: 180,
   },
   productInfo: {
     padding: 10,

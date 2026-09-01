@@ -14,11 +14,15 @@ import { Eye, EyeOff } from "lucide-react-native";
 import React from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/theme";
+import { useResponsive } from "@/hooks/useResponsive";
 
 export default function Signup() {
   const { Signup } = useAuth();
   const router = useRouter();
   const { theme } = useTheme();
+  const { width, isTablet } = useResponsive();
+  const bgImageHeight = isTablet ? 400 : Math.min(300, width * 0.7);
+  const formMarginTop = bgImageHeight - 60;
   const [isloading, setisloading] = useState(false);
   const [formData, setFormData] = useState({
     fullName: "",
@@ -88,7 +92,7 @@ export default function Signup() {
         source={{
           uri: "https://images.pexels.com/photos/5632402/pexels-photo-5632402.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
         }}
-        style={styles.backgroundImage}
+        style={[styles.backgroundImage, { height: bgImageHeight }]}
       />
 
       <View
@@ -98,6 +102,7 @@ export default function Signup() {
             backgroundColor: theme.isDark ? "#1E1E1E" : "rgba(255, 255, 255, 0.95)",
             borderColor: theme.colors.border,
             borderWidth: 1,
+            marginTop: formMarginTop,
           },
         ]}
       >
@@ -225,14 +230,12 @@ const styles = StyleSheet.create({
   },
   backgroundImage: {
     width: "100%",
-    height: 300,
     position: "absolute",
     top: 0,
   },
   formContainer: {
     flex: 1,
     padding: 24,
-    marginTop: 240,
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
   },

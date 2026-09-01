@@ -12,6 +12,7 @@ import { X, ShieldCheck, CreditCard, CircleAlert, RefreshCw } from "lucide-react
 import { WebView } from "react-native-webview";
 import { useTheme } from "@/theme";
 import { CashfreeOrderResponse } from "@/utils/paymentService";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface CashfreeCheckoutModalProps {
   visible: boolean;
@@ -35,6 +36,7 @@ export default function CashfreeCheckoutModal({
   onClose,
 }: CashfreeCheckoutModalProps) {
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const [webSdkLoading, setWebSdkLoading] = useState(true);
   const [webSdkError, setWebSdkError] = useState<string | null>(null);
   const webSdkTriggered = useRef(false);
@@ -275,7 +277,11 @@ export default function CashfreeCheckoutModal({
         <View
           style={[
             styles.header,
-            { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider },
+            {
+              backgroundColor: theme.colors.card,
+              borderBottomColor: theme.colors.divider,
+              paddingTop: insets.top + 8,
+            },
           ]}
         >
           <View style={styles.headerLeft}>
@@ -406,8 +412,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingVertical: 14,
-    paddingTop: Platform.OS === "ios" ? 50 : 16,
+    paddingBottom: 14,
     borderBottomWidth: 1,
   },
   headerLeft: {

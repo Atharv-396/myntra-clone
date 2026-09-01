@@ -14,10 +14,15 @@ import React from "react";
 import { Eye, EyeOff } from "lucide-react-native";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/theme";
+import { useResponsive } from "@/hooks/useResponsive";
 
 export default function Login() {
   const { login } = useAuth();
   const { theme } = useTheme();
+  const { width, isTablet } = useResponsive();
+  // Background image height and form overlap adapt to screen size
+  const bgImageHeight = isTablet ? 400 : Math.min(300, width * 0.7);
+  const formMarginTop = bgImageHeight - 60;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
@@ -55,7 +60,7 @@ export default function Login() {
         source={{
           uri: "https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=2070&auto=format&fit=crop",
         }}
-        style={styles.backgroundImage}
+        style={[styles.backgroundImage, { height: bgImageHeight }]}
       />
       <View
         style={[
@@ -64,6 +69,7 @@ export default function Login() {
             backgroundColor: theme.isDark ? "#1E1E1E" : "rgba(255, 255, 255, 0.95)",
             borderColor: theme.colors.border,
             borderWidth: 1,
+            marginTop: formMarginTop,
           },
         ]}
       >
@@ -164,14 +170,12 @@ const styles = StyleSheet.create({
   },
   backgroundImage: {
     width: "100%",
-    height: 300,
     position: "absolute",
     top: 0,
   },
   formContainer: {
     flex: 1,
     padding: 24,
-    marginTop: 240,
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
   },

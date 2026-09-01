@@ -15,6 +15,7 @@ import { getLocalRecentlyViewed } from "@/utils/recentlyViewedStorage";
 import axios from "axios";
 import BASE_URL from "@/config/api";
 import { useTheme } from "@/theme";
+import { useResponsive } from "@/hooks/useResponsive";
 
 interface RecentlyViewedSectionProps {
   refreshKey?: number;
@@ -26,6 +27,7 @@ export default function RecentlyViewedSection({
   const { user } = useAuth();
   const router = useRouter();
   const { theme } = useTheme();
+  const { carouselCardWidth, carouselImageHeight } = useResponsive();
   const [items, setItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -102,6 +104,7 @@ export default function RecentlyViewedSection({
               style={[
                 styles.card,
                 {
+                  width: carouselCardWidth,
                   backgroundColor: theme.colors.card,
                   borderColor: theme.colors.border,
                   borderWidth: 1,
@@ -112,7 +115,7 @@ export default function RecentlyViewedSection({
             >
               <Image
                 source={{ uri: product.images?.[0] }}
-                style={styles.image}
+                style={[styles.image, { width: carouselCardWidth, height: carouselImageHeight }]}
               />
               <Text style={[styles.brand, { color: theme.colors.textTertiary }]} numberOfLines={1}>
                 {product.brand}
@@ -149,15 +152,12 @@ const styles = StyleSheet.create({
     marginVertical: 20,
   },
   card: {
-    width: 120,
     marginRight: 12,
     borderRadius: 8,
     overflow: "hidden",
     paddingBottom: 8,
   },
   image: {
-    width: 120,
-    height: 140,
     borderTopLeftRadius: 7,
     borderTopRightRadius: 7,
   },

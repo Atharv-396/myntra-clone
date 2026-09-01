@@ -17,6 +17,7 @@ import RecentlyViewedSection from "@/components/RecentlyViewedSection";
 import ContinueShoppingSection from "@/components/ContinueShoppingSection";
 import YouMayAlsoLikeSection from "@/components/YouMayAlsoLikeSection";
 import { useTheme } from "@/theme";
+import { useResponsive } from "@/hooks/useResponsive";
 
 const deals = [
   {
@@ -36,10 +37,17 @@ const deals = [
 export default function Home() {
   const router = useRouter();
   const { theme } = useTheme();
+  const { headerPaddingTop, bannerHeight, productGridColumns, width, isTablet, isDesktop } = useResponsive();
   const [isLoading, setIsLoading] = useState(false);
   const [product, setproduct] = useState<any>(null);
   const [categories, setcategories] = useState<any>(null);
   const { user } = useAuth();
+
+  const cardWidth = Math.floor((width - 32 - (productGridColumns - 1) * 8) / productGridColumns);
+  const cardImageHeight = Math.round(cardWidth * 1.25);
+  // Deal card scales: wider on tablet/desktop, standard on phone
+  const dealCardWidth = isDesktop ? 380 : isTablet ? 320 : Math.min(260, width * 0.72);
+  const dealCardHeight = Math.round(dealCardWidth * 0.54);
 
   const handleProductPress = (productId: number) => {
     router.push(`/product/${productId}`);
@@ -65,7 +73,7 @@ export default function Home() {
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider }]}>
+      <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider, paddingTop: headerPaddingTop }]}>
         <Text style={[styles.logo, { color: theme.colors.textPrimary }]}>MYNTRA</Text>
         <TouchableOpacity
           style={[styles.searchButton, { backgroundColor: theme.colors.surfaceSecondary }]}
@@ -80,7 +88,8 @@ export default function Home() {
         source={{
           uri: "https://images.unsplash.com/photo-1445205170230-053b83016050?w=800&auto=format&fit=crop",
         }}
-        style={styles.banner}
+        style={[styles.banner, { height: bannerHeight }]}
+        resizeMode="cover"
       />
 
       <View style={styles.section}>
@@ -136,7 +145,7 @@ export default function Home() {
           style={styles.dealsScroll}
         >
           {deals.map((deal) => (
-            <TouchableOpacity key={deal.id} style={styles.dealCard} activeOpacity={0.85}>
+            <TouchableOpacity key={deal.id} style={[styles.dealCard, { width: dealCardWidth, height: dealCardHeight }]} activeOpacity={0.85}>
               <Image source={{ uri: deal.image }} style={styles.dealImage} />
               <View style={styles.dealOverlay}>
                 <Text style={styles.dealTitle}>{deal.title}</Text>
@@ -176,6 +185,7 @@ export default function Home() {
                   style={[
                     styles.productCard,
                     {
+                      width: cardWidth,
                       backgroundColor: theme.colors.card,
                       borderColor: theme.colors.border,
                       borderWidth: 1,
@@ -186,7 +196,8 @@ export default function Home() {
                 >
                   <Image
                     source={{ uri: p.images?.[0] }}
-                    style={styles.productImage}
+                    style={[styles.productImage, { height: cardImageHeight }]}
+                    resizeMode="cover"
                   />
                   <View style={styles.productInfo}>
                     <Text style={[styles.brandName, { color: theme.colors.textTertiary }]}>{p.brand}</Text>
@@ -216,8 +227,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 15,
-    paddingTop: 50,
+    paddingHorizontal: 15,
+    paddingBottom: 12,
     borderBottomWidth: 1,
   },
   emptyText: {
@@ -236,7 +247,6 @@ const styles = StyleSheet.create({
   },
   banner: {
     width: "100%",
-    height: 180,
     resizeMode: "cover",
   },
   section: {
@@ -288,8 +298,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
   },
   dealCard: {
-    width: 260,
-    height: 140,
     marginRight: 12,
     borderRadius: 10,
     overflow: "hidden",
@@ -314,17 +322,15 @@ const styles = StyleSheet.create({
   productsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-between",
+    gap: 8,
   },
   productCard: {
-    width: "48.5%",
     marginBottom: 12,
     borderRadius: 10,
     overflow: "hidden",
   },
   productImage: {
     width: "100%",
-    height: 180,
   },
   productInfo: {
     padding: 10,

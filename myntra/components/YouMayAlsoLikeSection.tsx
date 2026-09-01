@@ -14,6 +14,7 @@ import {
   RecommendedProduct,
 } from "@/utils/recommendationService";
 import { useTheme } from "@/theme";
+import { useResponsive } from "@/hooks/useResponsive";
 
 interface YouMayAlsoLikeSectionProps {
   currentProductId?: string;
@@ -28,6 +29,7 @@ export default function YouMayAlsoLikeSection({
 }: YouMayAlsoLikeSectionProps) {
   const router = useRouter();
   const { theme } = useTheme();
+  const { carouselCardWidth, carouselImageHeight } = useResponsive();
   const [products, setProducts] = useState<RecommendedProduct[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -78,6 +80,7 @@ export default function YouMayAlsoLikeSection({
             style={[
               styles.card,
               {
+                width: carouselCardWidth,
                 backgroundColor: theme.colors.card,
                 borderColor: theme.colors.border,
                 borderWidth: 1,
@@ -88,7 +91,7 @@ export default function YouMayAlsoLikeSection({
           >
             <Image
               source={{ uri: product.images?.[0] }}
-              style={styles.image}
+              style={[styles.image, { width: carouselCardWidth, height: carouselImageHeight }]}
             />
             <Text style={[styles.brand, { color: theme.colors.textTertiary }]} numberOfLines={1}>
               {product.brand}
@@ -129,15 +132,12 @@ const styles = StyleSheet.create({
     marginVertical: 20,
   },
   card: {
-    width: 130,
     marginRight: 12,
     borderRadius: 8,
     overflow: "hidden",
     paddingBottom: 8,
   },
   image: {
-    width: 130,
-    height: 155,
     borderTopLeftRadius: 7,
     borderTopRightRadius: 7,
   },

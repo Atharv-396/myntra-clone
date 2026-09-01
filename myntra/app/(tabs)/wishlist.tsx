@@ -14,11 +14,13 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useTheme } from "@/theme";
+import { useResponsive } from "@/hooks/useResponsive";
 
 export default function Wishlist() {
   const router = useRouter();
   const { user } = useAuth();
   const { theme } = useTheme();
+  const { headerPaddingTop, isTablet } = useResponsive();
   const [wishlist, setwishlist] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -53,7 +55,7 @@ export default function Wishlist() {
   if (!user) {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider }]}>
+        <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider, paddingTop: headerPaddingTop }]}>
           <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>Wishlist</Text>
         </View>
         <View style={styles.emptyState}>
@@ -81,9 +83,13 @@ export default function Wishlist() {
     );
   }
 
+  // On tablet, item image is larger
+  const itemImageWidth = isTablet ? 130 : 100;
+  const itemImageHeight = isTablet ? 160 : 120;
+
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider }]}>
+      <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider, paddingTop: headerPaddingTop }]}>
         <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>Wishlist</Text>
       </View>
 
@@ -118,7 +124,7 @@ export default function Wishlist() {
                 onPress={() => item.productId?._id && router.push(`/product/${item.productId._id}`)}
                 activeOpacity={0.8}
               >
-                <Image source={{ uri: item.productId?.images?.[0] }} style={styles.itemImage} />
+                <Image source={{ uri: item.productId?.images?.[0] }} style={[styles.itemImage, { width: itemImageWidth, height: itemImageHeight }]} />
               </TouchableOpacity>
               <View style={styles.itemInfo}>
                 <Text style={[styles.brandName, { color: theme.colors.textTertiary }]}>{item.productId?.brand}</Text>
@@ -157,8 +163,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    padding: 15,
-    paddingTop: 50,
+    paddingHorizontal: 15,
+    paddingBottom: 12,
     borderBottomWidth: 1,
   },
   headerTitle: {
@@ -198,8 +204,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   itemImage: {
-    width: 100,
-    height: 120,
+    // width/height set dynamically
   },
   itemInfo: {
     flex: 1,

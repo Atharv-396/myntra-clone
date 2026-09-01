@@ -16,6 +16,7 @@ import { fetchContinueShopping } from "@/utils/recentlyViewedService";
 import axios from "axios";
 import BASE_URL from "@/config/api";
 import { useTheme } from "@/theme";
+import { useResponsive } from "@/hooks/useResponsive";
 
 interface ContinueShoppingSectionProps {
   refreshKey?: number;
@@ -27,6 +28,7 @@ export default function ContinueShoppingSection({
   const { user } = useAuth();
   const router = useRouter();
   const { theme } = useTheme();
+  const { carouselCardWidth, carouselImageHeight } = useResponsive();
   const [items, setItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [addingToBag, setAddingToBag] = useState<string | null>(null);
@@ -124,6 +126,7 @@ export default function ContinueShoppingSection({
               style={[
                 styles.card,
                 {
+                  width: carouselCardWidth,
                   backgroundColor: theme.colors.card,
                   borderColor: theme.colors.border,
                   borderWidth: 1,
@@ -136,7 +139,7 @@ export default function ContinueShoppingSection({
               >
                 <Image
                   source={{ uri: product.images?.[0] }}
-                  style={styles.image}
+                  style={[styles.image, { width: carouselCardWidth, height: carouselImageHeight }]}
                 />
                 <View style={styles.info}>
                   <Text style={[styles.brand, { color: theme.colors.textTertiary }]} numberOfLines={1}>
@@ -205,14 +208,11 @@ const styles = StyleSheet.create({
     marginVertical: 20,
   },
   card: {
-    width: 150,
     marginRight: 12,
     borderRadius: 8,
     overflow: "hidden",
   },
   image: {
-    width: 150,
-    height: 170,
   },
   info: {
     padding: 8,

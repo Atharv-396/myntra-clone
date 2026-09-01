@@ -16,6 +16,7 @@ import {
   verifyCashfreePayment,
   CashfreeOrderResponse,
 } from "@/utils/paymentService";
+import { useResponsive } from "@/hooks/useResponsive";
 
 export default function Checkout() {
   const [loading, setLoading] = useState(false);
@@ -42,6 +43,7 @@ export default function Checkout() {
   const router = useRouter();
   const { user } = useAuth();
   const { theme } = useTheme();
+  const { headerPaddingTop, footerPaddingBottom, width, isTablet } = useResponsive();
 
   const formattedAddress = `${fullName}, ${address1}, ${address2 ? address2 + ", " : ""}${city}, ${stateName} - ${postalCode}, Phone: ${phone}`;
 
@@ -161,7 +163,7 @@ export default function Checkout() {
   if (!user) {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider }]}>
+        <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider, paddingTop: headerPaddingTop }]}>
           <TouchableOpacity onPress={handleBack} style={styles.backBtn} activeOpacity={0.7}>
             <ChevronLeft size={24} color={theme.colors.icon} />
           </TouchableOpacity>
@@ -184,7 +186,7 @@ export default function Checkout() {
   if (!summaryLoading && (summaryError?.toLowerCase().includes("empty") || (summary && summary.items.length === 0))) {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider }]}>
+        <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider, paddingTop: headerPaddingTop }]}>
           <TouchableOpacity onPress={handleBack} style={styles.backBtn} activeOpacity={0.7}>
             <ChevronLeft size={24} color={theme.colors.icon} />
           </TouchableOpacity>
@@ -212,7 +214,7 @@ export default function Checkout() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider }]}>
+      <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider, paddingTop: headerPaddingTop }]}>
         <TouchableOpacity onPress={handleBack} style={styles.backBtn} activeOpacity={0.7}>
           <ChevronLeft size={24} color={theme.colors.icon} />
         </TouchableOpacity>
@@ -419,7 +421,7 @@ export default function Checkout() {
       </ScrollView>
 
       {/* Footer / Action Button */}
-      <View style={[styles.footer, { backgroundColor: theme.colors.card, borderTopColor: theme.colors.divider }]}>
+      <View style={[styles.footer, { backgroundColor: theme.colors.card, borderTopColor: theme.colors.divider, paddingBottom: footerPaddingBottom }]}>
         <TouchableOpacity
           style={[
             styles.placeOrderButton,
@@ -458,7 +460,7 @@ export default function Checkout() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { flexDirection: "row", alignItems: "center", padding: 15, paddingTop: 50, borderBottomWidth: 1 },
+  header: { flexDirection: "row", alignItems: "center", paddingHorizontal: 15, paddingBottom: 12, borderBottomWidth: 1 },
   backBtn: { marginRight: 10, padding: 4 },
   headerTitle: { fontSize: 20, fontWeight: "bold" },
   content: { flex: 1, padding: 12 },

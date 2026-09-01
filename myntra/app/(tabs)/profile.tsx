@@ -23,6 +23,7 @@ import {
 import React from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme, ThemeMode } from "@/theme";
+import { useResponsive } from "@/hooks/useResponsive";
 
 const menuItems = [
   { icon: Package, label: "Orders", route: "/orders" },
@@ -62,6 +63,7 @@ export default function Profile() {
   const router = useRouter();
   const { user, logout } = useAuth();
   const { theme, themeMode, setThemeMode, systemTheme } = useTheme();
+  const { headerPaddingTop } = useResponsive();
 
   const handleLogout = async () => {
     await logout();
@@ -70,7 +72,7 @@ export default function Profile() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider }]}>
+      <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider, paddingTop: headerPaddingTop }]}>
         <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>Profile</Text>
       </View>
 
@@ -197,8 +199,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    padding: 15,
-    paddingTop: 50,
+    paddingHorizontal: 15,
+    paddingBottom: 12,
     borderBottomWidth: 1,
   },
   headerTitle: {

@@ -23,11 +23,13 @@ import {
 import axios from "axios";
 import BASE_URL from "@/config/api";
 import { useTheme } from "@/theme";
+import { useResponsive } from "@/hooks/useResponsive";
 
 export default function RecentlyViewedScreen() {
   const { user } = useAuth();
   const router = useRouter();
   const { theme } = useTheme();
+  const { headerPaddingTop, productGridColumns, width } = useResponsive();
   const [items, setItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -97,7 +99,7 @@ export default function RecentlyViewedScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider }]}>
+      <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider, paddingTop: headerPaddingTop }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
           <ChevronLeft size={24} color={theme.colors.icon} />
         </TouchableOpacity>
@@ -125,46 +127,55 @@ export default function RecentlyViewedScreen() {
         </View>
       ) : (
         <ScrollView style={styles.content}>
-          <View style={styles.grid}>
-            {items.map((item, index) => {
-              const product = item.product;
-              if (!product) return null;
-              return (
-                <TouchableOpacity
-                  key={product._id || index}
-                  style={[
-                    styles.productCard,
-                    {
-                      backgroundColor: theme.colors.card,
-                      borderColor: theme.colors.border,
-                      borderWidth: 1,
-                    },
-                  ]}
-                  onPress={() => router.push(`/product/${product._id}`)}
-                  activeOpacity={0.85}
-                >
-                  <Image
-                    source={{ uri: product.images?.[0] }}
-                    style={styles.productImage}
-                  />
-                  <View style={styles.productInfo}>
-                    <Text style={[styles.brandName, { color: theme.colors.textTertiary }]} numberOfLines={1}>
-                      {product.brand}
-                    </Text>
-                    <Text style={[styles.productName, { color: theme.colors.textPrimary }]} numberOfLines={2}>
-                      {product.name}
-                    </Text>
-                    <View style={styles.priceRow}>
-                      <Text style={[styles.price, { color: theme.colors.textPrimary }]}>₹{product.price}</Text>
-                      {product.discount ? (
-                        <Text style={[styles.discount, { color: theme.colors.primary }]}>{product.discount}</Text>
-                      ) : null}
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+          {(() => {
+            const cardGap = 12;
+            const gridPadding = 24;
+            const cardWidth = Math.floor((width - gridPadding - (productGridColumns - 1) * cardGap) / productGridColumns);
+            const cardImageHeight = Math.round(cardWidth * 1.25);
+            return (
+              <View style={styles.grid}>
+                {items.map((item, index) => {
+                  const product = item.product;
+                  if (!product) return null;
+                  return (
+                    <TouchableOpacity
+                      key={product._id || index}
+                      style={[
+                        styles.productCard,
+                        {
+                          width: cardWidth,
+                          backgroundColor: theme.colors.card,
+                          borderColor: theme.colors.border,
+                          borderWidth: 1,
+                        },
+                      ]}
+                      onPress={() => router.push(`/product/${product._id}`)}
+                      activeOpacity={0.85}
+                    >
+                      <Image
+                        source={{ uri: product.images?.[0] }}
+                        style={[styles.productImage, { height: cardImageHeight }]}
+                      />
+                      <View style={styles.productInfo}>
+                        <Text style={[styles.brandName, { color: theme.colors.textTertiary }]} numberOfLines={1}>
+                          {product.brand}
+                        </Text>
+                        <Text style={[styles.productName, { color: theme.colors.textPrimary }]} numberOfLines={2}>
+                          {product.name}
+                        </Text>
+                        <View style={styles.priceRow}>
+                          <Text style={[styles.price, { color: theme.colors.textPrimary }]}>₹{product.price}</Text>
+                          {product.discount ? (
+                            <Text style={[styles.discount, { color: theme.colors.primary }]}>{product.discount}</Text>
+                          ) : null}
+                        </View>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            );
+          })()}
         </ScrollView>
       )}
     </View>
@@ -181,8 +192,8 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 15,
-    paddingTop: 50,
+    paddingHorizontal: 15,
+    paddingBottom: 12,
     borderBottomWidth: 1,
   },
   backBtn: { paddingRight: 10, padding: 4 },
@@ -196,15 +207,13 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-between",
+    gap: 12,
   },
   productCard: {
-    width: "48.5%",
     borderRadius: 10,
-    marginBottom: 12,
     overflow: "hidden",
   },
-  productImage: { width: "100%", height: 180 },
+  productImage: { width: "100%" },
   productInfo: { padding: 10 },
   brandName: { fontSize: 11, marginBottom: 2 },
   productName: { fontSize: 13, fontWeight: "500", marginBottom: 4 },

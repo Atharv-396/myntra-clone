@@ -21,12 +21,16 @@ import { addToCart } from "@/utils/cartService";
 import { addToGuestCart } from "@/utils/guestCartStorage";
 import YouMayAlsoLikeSection from "@/components/YouMayAlsoLikeSection";
 import { useTheme } from "@/theme";
+import { useResponsive } from "@/hooks/useResponsive";
 
 export default function ProductDetails() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const { width } = useWindowDimensions();
   const { theme } = useTheme();
+  const { headerPaddingTop, footerPaddingBottom, isTablet, isDesktop } = useResponsive();
+  // Product image height: taller on tablet/desktop, natural on phone
+  const productImageHeight = isDesktop ? 560 : isTablet ? 480 : Math.round(width * 1.05);
   const [selectedSize, setSelectedSize] = useState("");
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -134,7 +138,7 @@ export default function ProductDetails() {
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Top Nav Back Button */}
-      <View style={[styles.navHeader, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider }]}>
+      <View style={[styles.navHeader, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider, paddingTop: headerPaddingTop }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
           <ChevronLeft size={24} color={theme.colors.icon} />
         </TouchableOpacity>
@@ -164,7 +168,7 @@ export default function ProductDetails() {
               <Image
                 key={index}
                 source={{ uri: image }}
-                style={[styles.productImage, { width }]}
+                style={[styles.productImage, { width, height: productImageHeight }]}
                 resizeMode="cover"
               />
             ))}
@@ -240,7 +244,7 @@ export default function ProductDetails() {
         />
       </ScrollView>
 
-      <View style={[styles.footer, { backgroundColor: theme.colors.card, borderTopColor: theme.colors.divider }]}>
+      <View style={[styles.footer, { backgroundColor: theme.colors.card, borderTopColor: theme.colors.divider, paddingBottom: footerPaddingBottom }]}>
         <TouchableOpacity
           style={[styles.addToBagButton, { backgroundColor: theme.colors.primary }]}
           onPress={handleAddToBag}
@@ -274,7 +278,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 15,
-    paddingTop: 50,
     paddingBottom: 12,
     borderBottomWidth: 1,
   },
@@ -294,7 +297,7 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   productImage: {
-    height: 380,
+    // width and height set dynamically
   },
   pagination: {
     position: "absolute",

@@ -31,6 +31,7 @@ import {
 } from "@/utils/notificationApi";
 import { getNotificationRoute } from "@/utils/notificationService";
 import { useTheme } from "@/theme";
+import { useResponsive } from "@/hooks/useResponsive";
 
 const CATEGORY_ICONS: Record<string, any> = {
   ORDER:     Package,
@@ -46,6 +47,7 @@ export default function NotificationsScreen() {
   const { user } = useAuth();
   const router = useRouter();
   const { theme } = useTheme();
+  const { headerPaddingTop } = useResponsive();
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -110,7 +112,7 @@ export default function NotificationsScreen() {
   if (!user) {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider }]}>
+        <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider, paddingTop: headerPaddingTop }]}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
             <ChevronLeft size={24} color={theme.colors.icon} />
           </TouchableOpacity>
@@ -134,7 +136,7 @@ export default function NotificationsScreen() {
   if (isLoading) {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider }]}>
+        <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider, paddingTop: headerPaddingTop }]}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
             <ChevronLeft size={24} color={theme.colors.icon} />
           </TouchableOpacity>
@@ -149,7 +151,7 @@ export default function NotificationsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider }]}>
+      <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider, paddingTop: headerPaddingTop }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
           <ChevronLeft size={24} color={theme.colors.icon} />
         </TouchableOpacity>
@@ -240,8 +242,8 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 15,
-    paddingTop: 50,
+    paddingHorizontal: 15,
+    paddingBottom: 12,
     borderBottomWidth: 1,
   },
   backBtn: { marginRight: 10, padding: 4 },

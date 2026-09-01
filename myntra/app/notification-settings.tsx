@@ -8,6 +8,7 @@ import { ChevronLeft } from "lucide-react-native";
 import { useAuth } from "@/context/AuthContext";
 import { fetchPreferences, updatePreferences, NotificationPrefs } from "@/utils/notificationApi";
 import { useTheme } from "@/theme";
+import { useResponsive } from "@/hooks/useResponsive";
 
 type PrefKey = keyof NotificationPrefs;
 
@@ -26,6 +27,7 @@ export default function NotificationSettingsScreen() {
   const { user } = useAuth();
   const router = useRouter();
   const { theme } = useTheme();
+  const { headerPaddingTop } = useResponsive();
 
   const [prefs, setPrefs] = useState<NotificationPrefs | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -66,7 +68,7 @@ export default function NotificationSettingsScreen() {
   if (!user) {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider }]}>
+        <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider, paddingTop: headerPaddingTop }]}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
             <ChevronLeft size={24} color={theme.colors.icon} />
           </TouchableOpacity>
@@ -88,7 +90,7 @@ export default function NotificationSettingsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider }]}>
+      <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider, paddingTop: headerPaddingTop }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
           <ChevronLeft size={24} color={theme.colors.icon} />
         </TouchableOpacity>
@@ -153,7 +155,7 @@ export default function NotificationSettingsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { flexDirection: "row", alignItems: "center", padding: 15, paddingTop: 50, borderBottomWidth: 1 },
+  header: { flexDirection: "row", alignItems: "center", paddingHorizontal: 15, paddingBottom: 12, borderBottomWidth: 1 },
   backBtn: { marginRight: 10, padding: 4 },
   headerTitle: { flex: 1, fontSize: 20, fontWeight: "bold" },
   centerState: { flex: 1, justifyContent: "center", alignItems: "center", padding: 30, marginTop: 80 },

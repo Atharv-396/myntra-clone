@@ -22,11 +22,13 @@ import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
 import BASE_URL from "@/config/api";
 import { useTheme } from "@/theme";
+import { useResponsive } from "@/hooks/useResponsive";
 
 export default function Orders() {
   const router = useRouter();
   const { user } = useAuth();
   const { theme } = useTheme();
+  const { headerPaddingTop, isTablet } = useResponsive();
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [orders, setOrders] = useState<any[]>([]);
@@ -67,7 +69,7 @@ export default function Orders() {
   if (!user) {
     return (
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-        <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider }]}>
+        <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider, paddingTop: headerPaddingTop }]}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
             <ChevronLeft size={24} color={theme.colors.icon} />
           </TouchableOpacity>
@@ -91,7 +93,7 @@ export default function Orders() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider }]}>
+      <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider, paddingTop: headerPaddingTop }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
           <ChevronLeft size={24} color={theme.colors.icon} />
         </TouchableOpacity>
@@ -281,8 +283,8 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 15,
-    paddingTop: 50,
+    paddingHorizontal: 15,
+    paddingBottom: 12,
     borderBottomWidth: 1,
   },
   backBtn: {
