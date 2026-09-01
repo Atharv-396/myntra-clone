@@ -168,52 +168,55 @@ export default function Home() {
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionTitle, { color: theme.colors.textPrimary }]}>TRENDING NOW</Text>
         </View>
-        <View style={styles.productsGrid}>
-          {isLoading ? (
-            <ActivityIndicator
-              size="large"
-              color={theme.colors.primary}
-              style={styles.loader}
-            />
-          ) : !product || product.length === 0 ? (
-            <Text style={[styles.emptyText, { color: theme.colors.textTertiary }]}>No Product available</Text>
-          ) : (
-            <View style={styles.productsGrid}>
-              {product.map((p: any) => (
-                <TouchableOpacity
-                  key={p._id}
-                  style={[
-                    styles.productCard,
-                    {
-                      width: cardWidth,
-                      backgroundColor: theme.colors.card,
-                      borderColor: theme.colors.border,
-                      borderWidth: 1,
-                    },
-                  ]}
-                  onPress={() => handleProductPress(p._id)}
-                  activeOpacity={0.85}
-                >
-                  <Image
-                    source={{ uri: p.images?.[0] }}
-                    style={[styles.productImage, { height: cardImageHeight }]}
-                    resizeMode="cover"
-                  />
-                  <View style={styles.productInfo}>
-                    <Text style={[styles.brandName, { color: theme.colors.textTertiary }]}>{p.brand}</Text>
-                    <Text style={[styles.productName, { color: theme.colors.textPrimary }]} numberOfLines={1}>{p.name}</Text>
-                    <View style={styles.priceRow}>
-                      <Text style={[styles.productPrice, { color: theme.colors.textPrimary }]}>₹{p.price}</Text>
-                      {p.discount ? (
-                        <Text style={[styles.discount, { color: theme.colors.primary }]}>{p.discount}</Text>
-                      ) : null}
-                    </View>
+        {isLoading ? (
+          <ActivityIndicator
+            size="large"
+            color={theme.colors.primary}
+            style={styles.loader}
+          />
+        ) : !product || product.length === 0 ? (
+          <Text style={[styles.emptyText, { color: theme.colors.textTertiary }]}>No Product available</Text>
+        ) : (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.trendingScroll}
+            contentContainerStyle={styles.trendingContent}
+          >
+            {product.map((p: any) => (
+              <TouchableOpacity
+                key={p._id}
+                style={[
+                  styles.trendingCard,
+                  {
+                    width: cardWidth,
+                    backgroundColor: theme.colors.card,
+                    borderColor: theme.colors.border,
+                    borderWidth: 1,
+                  },
+                ]}
+                onPress={() => handleProductPress(p._id)}
+                activeOpacity={0.85}
+              >
+                <Image
+                  source={{ uri: p.images?.[0] }}
+                  style={[styles.productImage, { height: cardImageHeight }]}
+                  resizeMode="cover"
+                />
+                <View style={styles.productInfo}>
+                  <Text style={[styles.brandName, { color: theme.colors.textTertiary }]}>{p.brand}</Text>
+                  <Text style={[styles.productName, { color: theme.colors.textPrimary }]} numberOfLines={1}>{p.name}</Text>
+                  <View style={styles.priceRow}>
+                    <Text style={[styles.productPrice, { color: theme.colors.textPrimary }]}>₹{p.price}</Text>
+                    {p.discount ? (
+                      <Text style={[styles.discount, { color: theme.colors.primary }]}>{p.discount}</Text>
+                    ) : null}
                   </View>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-        </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
       </View>
     </ScrollView>
   );
@@ -320,9 +323,19 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   productsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
+    // kept for any future grid use
+  },
+  trendingScroll: {
+    marginHorizontal: -15,
+    paddingHorizontal: 15,
+  },
+  trendingContent: {
+    paddingRight: 15,
+    gap: 10,
+  },
+  trendingCard: {
+    borderRadius: 10,
+    overflow: "hidden",
   },
   productCard: {
     marginBottom: 12,
