@@ -57,8 +57,9 @@ async function sendNotification({ userId, category, type, title, body, data = {}
     // ── Get active device tokens ─────────────────────────────────────────
     const devices = await PushDevice.find({ userId, isActive: true }).lean();
     if (devices.length === 0) {
-      console.log(`[Notification] No active devices for user ${userId}`);
-      // Still create a notification record even without devices
+      console.log(`[Notification] No active devices for user ${userId} — storing as in-app notification`);
+      // No push devices — store as SENT so it appears in the notification center
+      // The user can still see it in-app even without push delivery
       await Notification.create({
         userId,
         category,
@@ -66,10 +67,11 @@ async function sendNotification({ userId, category, type, title, body, data = {}
         title,
         body,
         data,
-        status: "FAILED",
-        errorCode: "NO_DEVICES",
-        errorMessage: "User has no active push devices",
+        status: "SENT",
+        errorCode: "",
+        errorMessage: "",
         idempotencyKey,
+        sentAt: new Date(),
       });
       return;
     }

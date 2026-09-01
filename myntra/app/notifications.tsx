@@ -17,7 +17,7 @@ import {
   Package,
   CreditCard,
   Truck,
-  CheckCircle,
+  CircleCheck,
   TrendingDown,
   Sparkles,
   Megaphone,
@@ -28,18 +28,18 @@ import {
   markNotificationRead,
   markAllRead,
   NotificationItem,
-} from "@/utils/notificationService";
+} from "@/utils/notificationApi";
 import { getNotificationRoute } from "@/utils/notificationService";
 import { useTheme } from "@/theme";
 
 const CATEGORY_ICONS: Record<string, any> = {
-  ORDER_CONFIRMATION: Package,
-  PAYMENT_UPDATE: CreditCard,
-  SHIPPING_PROGRESS: Truck,
-  DELIVERY_STATUS: CheckCircle,
-  WISHLIST_PRICE_DROP: TrendingDown,
-  BACK_IN_STOCK: Sparkles,
-  PROMOTIONAL: Megaphone,
+  ORDER:     Package,
+  PAYMENT:   CreditCard,
+  SHIPPING:  Truck,
+  DELIVERY:  CircleCheck,
+  WISHLIST:  TrendingDown,
+  STOCK:     Sparkles,
+  PROMOTION: Megaphone,
 };
 
 export default function NotificationsScreen() {
@@ -78,8 +78,9 @@ export default function NotificationsScreen() {
   };
 
   const handleNotificationPress = async (notif: NotificationItem) => {
+    if (!user) return;
     if (!notif.readAt) {
-      markNotificationRead(notif._id).catch(() => {});
+      markNotificationRead(user._id, notif._id).catch(() => {});
       setNotifications((prev) =>
         prev.map((n) =>
           n._id === notif._id
