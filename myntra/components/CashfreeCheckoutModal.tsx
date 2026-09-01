@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+﻿import React, { useState, useEffect, useRef } from "react";
 import {
   Modal,
   View,
@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
   Platform,
 } from "react-native";
-import { X, ShieldCheck, CreditCard, AlertCircle, RefreshCw } from "lucide-react-native";
+import { X, ShieldCheck, CreditCard, CircleAlert, RefreshCw } from "lucide-react-native";
 import { WebView } from "react-native-webview";
 import { useTheme } from "@/theme";
 import { CashfreeOrderResponse } from "@/utils/paymentService";
@@ -189,7 +189,7 @@ export default function CashfreeCheckoutModal({
       <div id="loader" class="loader-box">
         <div class="spinner"></div>
         <div class="loading-title">Connecting to Cashfree Gateway</div>
-        <div class="loading-sub">Securing session for ₹${orderData.orderAmount}...</div>
+        <div class="loading-sub">Securing session for â‚¹${orderData.orderAmount}...</div>
       </div>
 
       <div id="cashfree-dropin-container"></div>
@@ -314,7 +314,7 @@ export default function CashfreeCheckoutModal({
                 Total Amount Payable
               </Text>
               <Text style={[styles.amountValue, { color: theme.colors.textPrimary }]}>
-                ₹{orderData.orderAmount}
+                â‚¹{orderData.orderAmount}
               </Text>
               <Text style={[styles.orderMeta, { color: theme.colors.textTertiary }]}>
                 Order: {orderData.orderId}
@@ -331,7 +331,7 @@ export default function CashfreeCheckoutModal({
 
               {webSdkError && (
                 <View style={styles.errorBox}>
-                  <AlertCircle size={20} color={theme.colors.error} />
+                  <CircleAlert size={20} color={theme.colors.error} />
                   <Text style={[styles.errorText, { color: theme.colors.error }]}>
                     {webSdkError}
                   </Text>

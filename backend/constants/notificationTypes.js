@@ -22,6 +22,7 @@ const NOTIFICATION_TYPES = {
 
   // PAYMENT
   PAYMENT_SUCCESS:     "PAYMENT_SUCCESS",
+  PAYMENT_SUCCESSFUL:  "PAYMENT_SUCCESS",  // alias used in PaymentRoutes
   PAYMENT_FAILED:      "PAYMENT_FAILED",
   REFUND_INITIATED:    "REFUND_INITIATED",
   REFUND_COMPLETED:    "REFUND_COMPLETED",
@@ -56,6 +57,7 @@ const TYPE_TO_PREFERENCE = {
   ORDER_CANCELLED:       "orderNotifications",
   ORDER_RETURNED:        "orderNotifications",
   PAYMENT_SUCCESS:       "paymentNotifications",
+  PAYMENT_SUCCESSFUL:    "paymentNotifications",
   PAYMENT_FAILED:        "paymentNotifications",
   REFUND_INITIATED:      "paymentNotifications",
   REFUND_COMPLETED:      "paymentNotifications",
