@@ -136,9 +136,10 @@ export default function Bag() {
   };
 
   const handleClearCart = () => {
-    // setTimeout(0) ensures the button loses focus before the Alert opens on web
-    setTimeout(() => {
-      Alert.alert("Clear Cart", "Remove all items from your cart?", [
+    Alert.alert(
+      "Clear Cart",
+      "Remove all items from your cart?",
+      [
         { text: "Cancel", style: "cancel" },
         {
           text: "Clear",
@@ -151,6 +152,7 @@ export default function Bag() {
               setSavedItems([]);
             } catch (e: any) {
               console.log("clearCart error:", JSON.stringify(e?.response?.data), e?.message);
+              // Fallback: delete each item individually
               try {
                 await Promise.all([
                   ...cartItems.map((item) => removeFromCart(item._id)),
@@ -158,14 +160,15 @@ export default function Bag() {
                 ]);
                 setCartItems([]);
                 setSavedItems([]);
-              } catch (fallbackErr) {
+              } catch {
                 Alert.alert("Error", "Could not clear cart. Please try again.");
               }
             }
           },
         },
-      ]);
-    }, 0);
+      ],
+      { cancelable: true }
+    );
   };
 
   const handleCheckout = async () => {
@@ -456,7 +459,7 @@ export default function Bag() {
           Shopping Bag ({cartItems.length})
         </Text>
         {cartItems.length > 0 && (
-          <TouchableOpacity onPress={handleClearCart}>
+          <TouchableOpacity onPress={handleClearCart} activeOpacity={0.6} hitSlop={{ top: 10, bottom: 10, left: 16, right: 8 }}>
             <Text style={[styles.clearText, { color: theme.colors.primary }]}>Clear</Text>
           </TouchableOpacity>
         )}

@@ -31,18 +31,9 @@ export default function RecentlyViewedScreen() {
   const { theme } = useTheme();
   const { headerPaddingTop, productGridColumns, width } = useResponsive();
   const [items, setItems] = useState<any[]>([]);
-  // Start in loading state; flip to false once hydrated+loaded or when no items found
   const [isLoading, setIsLoading] = useState(true);
 
-  // Once hydrated, kick off the first load
-  useEffect(() => {
-    if (isHydrated) {
-      loadHistory();
-    }
-  }, [isHydrated]); // eslint-disable-line react-hooks/exhaustive-deps
-
   const loadHistory = useCallback(async () => {
-    // Wait for client-side hydration before reading auth state or localStorage
     if (!isHydrated) return;
     setIsLoading(true);
     try {
@@ -72,30 +63,42 @@ export default function RecentlyViewedScreen() {
     }
   }, [user, isHydrated]);
 
+  // Trigger load once client has hydrated
+  useEffect(() => {
+    if (isHydrated) {
+      loadHistory();
+    }
+  }, [isHydrated, loadHistory]);
+
+  // ─── Clear all handler ────────────────────────────────────────────────────
+  // NOTE: Alert.alert must NOT be inside setTimeout on React Native —
+  // doing so breaks the gesture responder and prevents the dialog from showing.
   const handleClearAll = () => {
-    // setTimeout(0) ensures the button loses focus before the Alert opens,
-    // preventing the aria-hidden warning on web ("Blocked aria-hidden on focused element")
-    setTimeout(() => {
-      Alert.alert(
-        "Clear History",
-        "Are you sure you want to clear your recently viewed history?",
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Clear",
-            style: "destructive",
-            onPress: async () => {
+    Alert.alert(
+      "Clear History",
+      "Are you sure you want to clear your recently viewed history?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Clear",
+          style: "destructive",
+          onPress: async () => {
+            try {
               if (user) {
                 await clearRecentlyViewed(user._id);
               } else {
                 await clearLocalRecentlyViewed();
               }
               setItems([]);
-            },
+            } catch (e: any) {
+              console.log("clearRecentlyViewed error:", e?.message);
+              Alert.alert("Error", "Could not clear history. Please try again.");
+            }
           },
-        ]
-      );
-    }, 0);
+        },
+      ],
+      { cancelable: true }
+    );
   };
 
   if (isLoading) {
@@ -115,7 +118,12 @@ export default function RecentlyViewedScreen() {
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>Recently Viewed</Text>
         {items.length > 0 && (
-          <TouchableOpacity onPress={handleClearAll} style={styles.clearBtn} activeOpacity={0.7}>
+          <TouchableOpacity
+            onPress={handleClearAll}
+            style={styles.clearBtn}
+            activeOpacity={0.6}
+            hitSlop={{ top: 10, bottom: 10, left: 12, right: 8 }}
+          >
             <Trash2 size={20} color={theme.colors.primary} />
           </TouchableOpacity>
         )}
@@ -140,7 +148,9 @@ export default function RecentlyViewedScreen() {
           {(() => {
             const cardGap = 12;
             const gridPadding = 24;
-            const cardWidth = Math.floor((width - gridPadding - (productGridColumns - 1) * cardGap) / productGridColumns);
+            const cardWidth = Math.floor(
+              (width - gridPadding - (productGridColumns - 1) * cardGap) / productGridColumns
+            );
             const cardImageHeight = Math.round(cardWidth * 1.25);
             return (
               <View style={styles.grid}>
@@ -174,9 +184,13 @@ export default function RecentlyViewedScreen() {
                           {product.name}
                         </Text>
                         <View style={styles.priceRow}>
-                          <Text style={[styles.price, { color: theme.colors.textPrimary }]}>₹{product.price}</Text>
+                          <Text style={[styles.price, { color: theme.colors.textPrimary }]}>
+                            &#x20B9;{product.price}
+                          </Text>
                           {product.discount ? (
-                            <Text style={[styles.discount, { color: theme.colors.primary }]}>{product.discount}</Text>
+                            <Text style={[styles.discount, { color: theme.colors.primary }]}>
+                              {product.discount}
+                            </Text>
                           ) : null}
                         </View>
                       </View>
@@ -212,7 +226,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
   },
-  clearBtn: { padding: 5 },
+  clearBtn: { padding: 8 },
   content: { flex: 1, padding: 12 },
   grid: {
     flexDirection: "row",
@@ -228,10 +242,7 @@ const styles = StyleSheet.create({
   brandName: { fontSize: 11, marginBottom: 2 },
   productName: { fontSize: 13, fontWeight: "500", marginBottom: 4 },
   priceRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  price: {
-    fontSize: 14,
-    fontWeight: "bold",
-  },
+  price: { fontSize: 14, fontWeight: "bold" },
   discount: { fontSize: 12, fontWeight: "600" },
   emptyState: {
     flex: 1,
