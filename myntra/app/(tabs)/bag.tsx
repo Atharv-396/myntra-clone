@@ -143,8 +143,13 @@ export default function Bag() {
         style: "destructive",
         onPress: async () => {
           if (!user) return;
-          await clearCart(user._id);
-          setCartItems([]);
+          try {
+            await clearCart(user._id);
+            setCartItems([]);
+            setSavedItems([]);
+          } catch (e: any) {
+            Alert.alert("Error", e?.response?.data?.message || "Could not clear cart. Please try again.");
+          }
         },
       },
     ]);
