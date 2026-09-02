@@ -239,7 +239,10 @@ export default function Orders() {
     try {
       setIsLoading(true);
       const res = await axios.get(`${BASE_URL}/order/user/${currentUser._id}`);
-      setOrders(Array.isArray(res.data) ? res.data : []);
+      // Handle both paginated response {orders:[]} and legacy flat array
+      const data = res.data;
+      const list = Array.isArray(data) ? data : (Array.isArray(data.orders) ? data.orders : []);
+      setOrders(list);
     } catch (error) {
       console.log("fetchOrders error:", error);
       setOrders([]);

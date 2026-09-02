@@ -15,6 +15,7 @@ const TrackingSchema = new mongoose.Schema({
 const OrderItemSchema = new mongoose.Schema({
   productId: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
   size: String,
+  color: { type: String, default: "" },
   price: Number,
   quantity: Number,
 });
@@ -33,6 +34,13 @@ const OrderSchema = new mongoose.Schema(
     cashfreePaymentId: String,
     paymentSessionId: String,
     tracking: TrackingSchema,
+    // Cancellation fields
+    cancellationReason: { type: String, default: "" },
+    cancelledAt: { type: Date },
+    // Return fields
+    returnStatus: { type: String, enum: ["", "Requested", "Approved", "Rejected", "Completed"], default: "" },
+    returnReason: { type: String, default: "" },
+    returnRequestedAt: { type: Date },
   },
   { timestamps: true }
 );

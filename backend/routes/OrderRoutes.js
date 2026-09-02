@@ -209,11 +209,36 @@ router.post("/create/:userId", async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /order/user/:userid
+// Supports optional query params: page, limit, status, paymentMethod, sort
 // ─────────────────────────────────────────────────────────────────────────────
 router.get("/user/:userid", validateParamUserId("userid"), async (req, res) => {
   try {
-    const order = await Order.find({ userId: req.params.userid }).populate("items.productId");
-    res.status(200).json(order);
+    const { page = 1, limit = 20, status, paymentMethod, sort = "-createdAt" } = req.query;
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const limitNum = Math.min(50, Math.max(1, parseInt(limit) || 20));
+    const skip = (pageNum - 1) * limitNum;
+
+    // Build filter
+    const filter = { userId: req.params.userid };
+    if (status) filter.status = status;
+    if (paymentMethod) filter.paymentMethod = paymentMethod;
+
+    const [orders, total] = await Promise.all([
+      Order.find(filter)
+        .sort(sort)
+        .skip(skip)
+        .limit(limitNum)
+        .populate("items.productId"),
+      Order.countDocuments(filter),
+    ]);
+
+    res.status(200).json({
+      orders,
+      page: pageNum,
+      limit: limitNum,
+      total,
+      totalPages: Math.ceil(total / limitNum),
+    });
   } catch (error) {
     console.log("GET /order/user error:", error);
     return res.status(500).json({ message: "Something went wrong" });
