@@ -57,7 +57,6 @@ export default function CashfreeCheckoutModal({
       setWebSdkLoading(true);
       setWebSdkError(null);
 
-      // Helper to initialize Cashfree checkout
       const initCheckout = () => {
         if (!window.Cashfree) {
           if (isMounted) setWebSdkError("Cashfree SDK could not be loaded.");
@@ -76,27 +75,21 @@ export default function CashfreeCheckoutModal({
             })
             .then((result: any) => {
               if (result?.error) {
-                console.log("[Cashfree Web SDK] Checkout error/dropped:", result.error);
                 onFailure(result.error.message || "Payment cancelled or failed");
               } else if (result?.paymentDetails) {
-                console.log("[Cashfree Web SDK] Checkout success:", result.paymentDetails);
                 const paymentId =
                   result.paymentDetails.paymentId ||
                   result.paymentDetails.paymentMessage ||
                   `cf_pay_${Date.now()}`;
                 onSuccess(paymentId);
-              } else if (result?.redirect) {
-                console.log("[Cashfree Web SDK] Redirection triggered");
               }
             })
             .catch((err: any) => {
-              console.error("[Cashfree Web SDK] Checkout exception:", err);
               if (isMounted) {
-                setWebSdkError(err?.message || "Cashfree checkout encounter an error.");
+                setWebSdkError(err?.message || "Cashfree checkout encountered an error.");
               }
             });
         } catch (e: any) {
-          console.error("[Cashfree Web SDK] Init error:", e);
           if (isMounted) {
             setWebSdkError(e?.message || "Could not initialize Cashfree gateway.");
           }
@@ -110,16 +103,13 @@ export default function CashfreeCheckoutModal({
         return;
       }
 
-      // Dynamically load Cashfree JS SDK v3 script into DOM
       const existingScript = document.getElementById("cashfree-js-sdk");
       if (!existingScript) {
         const script = document.createElement("script");
         script.id = "cashfree-js-sdk";
         script.src = "https://sdk.cashfree.com/js/v3/cashfree.js";
         script.async = true;
-        script.onload = () => {
-          if (isMounted) initCheckout();
-        };
+        script.onload = () => { if (isMounted) initCheckout(); };
         script.onerror = () => {
           if (isMounted) {
             setWebSdkLoading(false);
@@ -128,9 +118,7 @@ export default function CashfreeCheckoutModal({
         };
         document.body.appendChild(script);
       } else {
-        existingScript.addEventListener("load", () => {
-          if (isMounted) initCheckout();
-        });
+        existingScript.addEventListener("load", () => { if (isMounted) initCheckout(); });
       }
     };
 
@@ -139,9 +127,7 @@ export default function CashfreeCheckoutModal({
       loadCashfreeSdk();
     }
 
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [visible, orderData, isSandbox]);
 
   if (!orderData) return null;
@@ -168,13 +154,9 @@ export default function CashfreeCheckoutModal({
           min-height: 100vh;
           padding: 16px;
         }
-        .loader-box {
-          text-align: center;
-          padding: 24px;
-        }
+        .loader-box { text-align: center; padding: 24px; }
         .spinner {
-          width: 44px;
-          height: 44px;
+          width: 44px; height: 44px;
           border: 4px solid #f3f3f3;
           border-top: 4px solid #FF3F6C;
           border-radius: 50%;
@@ -191,40 +173,29 @@ export default function CashfreeCheckoutModal({
       <div id="loader" class="loader-box">
         <div class="spinner"></div>
         <div class="loading-title">Connecting to Cashfree Gateway</div>
-        <div class="loading-sub">Securing session for â‚¹${orderData.orderAmount}...</div>
+        <div class="loading-sub">Securing session for &#x20B9;${orderData.orderAmount}...</div>
       </div>
-
       <div id="cashfree-dropin-container"></div>
-
       <script>
         function postToReactNative(data) {
           if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
             window.ReactNativeWebView.postMessage(JSON.stringify(data));
           }
         }
-
         window.onload = function() {
           try {
             if (!window.Cashfree) {
               postToReactNative({ status: "FAILED", message: "Cashfree SDK failed to initialize." });
               return;
             }
-
-            var cashfree = window.Cashfree({
-              mode: "${isSandbox ? "sandbox" : "production"}"
-            });
-
+            var cashfree = window.Cashfree({ mode: "${isSandbox ? "sandbox" : "production"}" });
             document.getElementById("loader").style.display = "none";
-
             cashfree.checkout({
               paymentSessionId: "${orderData.paymentSessionId}",
               redirectTarget: "_self"
             }).then(function(result) {
               if (result && result.error) {
-                postToReactNative({
-                  status: "FAILED",
-                  message: result.error.message || "Payment cancelled or failed"
-                });
+                postToReactNative({ status: "FAILED", message: result.error.message || "Payment cancelled or failed" });
               } else if (result && result.paymentDetails) {
                 postToReactNative({
                   status: "SUCCESS",
@@ -232,10 +203,7 @@ export default function CashfreeCheckoutModal({
                 });
               }
             }).catch(function(err) {
-              postToReactNative({
-                status: "FAILED",
-                message: err ? (err.message || String(err)) : "Checkout encounter error"
-              });
+              postToReactNative({ status: "FAILED", message: err ? (err.message || String(err)) : "Checkout error" });
             });
           } catch(e) {
             postToReactNative({ status: "FAILED", message: e.message || "Error opening payment gateway" });
@@ -263,9 +231,7 @@ export default function CashfreeCheckoutModal({
 
   const handleWebViewNavigationChange = (navState: any) => {
     const url = navState.url || "";
-    // If Cashfree redirects to return_url containing order status or order_id
     if (url.includes("/orders") || url.includes("order_id=")) {
-      // Payment completed and redirected to return URL
       onSuccess(`cf_pay_${Date.now()}`);
     }
   };
@@ -320,7 +286,7 @@ export default function CashfreeCheckoutModal({
                 Total Amount Payable
               </Text>
               <Text style={[styles.amountValue, { color: theme.colors.textPrimary }]}>
-                â‚¹{orderData.orderAmount}
+                {"\u20B9"}{orderData.orderAmount}
               </Text>
               <Text style={[styles.orderMeta, { color: theme.colors.textTertiary }]}>
                 Order: {orderData.orderId}
@@ -404,9 +370,7 @@ export default function CashfreeCheckoutModal({
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -415,131 +379,31 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
     borderBottomWidth: 1,
   },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-  },
-  sandboxTag: {
-    backgroundColor: "#FFF3CD",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  sandboxText: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: "#856404",
-  },
-  closeBtn: {
-    padding: 4,
-  },
-  webView: {
-    flex: 1,
-  },
+  headerLeft: { flexDirection: "row", alignItems: "center", gap: 8 },
+  headerTitle: { fontSize: 17, fontWeight: "700" },
+  sandboxTag: { backgroundColor: "#FFF3CD", paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
+  sandboxText: { fontSize: 10, fontWeight: "800", color: "#856404" },
+  closeBtn: { padding: 4 },
+  webView: { flex: 1 },
   loadingContainer: {
-    position: "absolute",
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "transparent",
+    position: "absolute", top: 0, bottom: 0, left: 0, right: 0,
+    justifyContent: "center", alignItems: "center", backgroundColor: "transparent",
   },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-  },
-  webContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  paymentBox: {
-    width: "100%",
-    maxWidth: 440,
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 24,
-    alignItems: "center",
-  },
-  badgeContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 16,
-  },
-  gatewayName: {
-    fontSize: 15,
-    fontWeight: "700",
-    letterSpacing: 0.3,
-  },
-  amountLabel: {
-    fontSize: 13,
-    marginBottom: 4,
-  },
-  amountValue: {
-    fontSize: 34,
-    fontWeight: "800",
-    marginBottom: 4,
-  },
-  orderMeta: {
-    fontSize: 12,
-    marginBottom: 16,
-  },
-  loadingBox: {
-    marginVertical: 20,
-    alignItems: "center",
-  },
-  errorBox: {
-    marginVertical: 16,
-    alignItems: "center",
-    gap: 8,
-  },
-  errorText: {
-    fontSize: 13,
-    textAlign: "center",
-  },
-  retryBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 6,
-    marginTop: 8,
-  },
-  retryBtnText: {
-    color: "#FFF",
-    fontWeight: "700",
-    fontSize: 13,
-  },
-  divider: {
-    width: "100%",
-    height: 1,
-    marginVertical: 16,
-  },
-  cancelButton: {
-    width: "100%",
-    paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: "center",
-    borderWidth: 1,
-    marginBottom: 16,
-  },
-  cancelButtonText: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  secureFooter: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
+  loadingText: { marginTop: 12, fontSize: 14 },
+  webContainer: { flex: 1, justifyContent: "center", alignItems: "center", padding: 20 },
+  paymentBox: { width: "100%", maxWidth: 440, borderRadius: 16, borderWidth: 1, padding: 24, alignItems: "center" },
+  badgeContainer: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 16 },
+  gatewayName: { fontSize: 15, fontWeight: "700", letterSpacing: 0.3 },
+  amountLabel: { fontSize: 13, marginBottom: 4 },
+  amountValue: { fontSize: 34, fontWeight: "800", marginBottom: 4 },
+  orderMeta: { fontSize: 12, marginBottom: 16 },
+  loadingBox: { marginVertical: 20, alignItems: "center" },
+  errorBox: { marginVertical: 16, alignItems: "center", gap: 8 },
+  errorText: { fontSize: 13, textAlign: "center" },
+  retryBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 6, marginTop: 8 },
+  retryBtnText: { color: "#FFF", fontWeight: "700", fontSize: 13 },
+  divider: { width: "100%", height: 1, marginVertical: 16 },
+  cancelButton: { width: "100%", paddingVertical: 12, borderRadius: 10, alignItems: "center", borderWidth: 1, marginBottom: 16 },
+  cancelButtonText: { fontSize: 14, fontWeight: "600" },
+  secureFooter: { flexDirection: "row", alignItems: "center", gap: 6 },
 });

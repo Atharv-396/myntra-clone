@@ -24,14 +24,14 @@ export default function Checkout() {
   const [summary, setSummary] = useState<CheckoutSummary | null>(null);
   const [summaryError, setSummaryError] = useState<string | null>(null);
 
-  // Dynamic Shipping Address State
-  const [fullName, setFullName] = useState("John Doe");
-  const [address1, setAddress1] = useState("123 Main Street");
-  const [address2, setAddress2] = useState("Apt 4B");
-  const [city, setCity] = useState("Bengaluru");
-  const [stateName, setStateName] = useState("Karnataka");
-  const [postalCode, setPostalCode] = useState("560001");
-  const [phone, setPhone] = useState("9876543210");
+  // Dynamic Shipping Address State — empty by default so user enters their own
+  const [fullName, setFullName] = useState("");
+  const [address1, setAddress1] = useState("");
+  const [address2, setAddress2] = useState("");
+  const [city, setCity] = useState("");
+  const [stateName, setStateName] = useState("");
+  const [postalCode, setPostalCode] = useState("");
+  const [phone, setPhone] = useState("");
 
   // Payment Method Selection
   const [paymentMethod, setPaymentMethod] = useState<"CASHFREE" | "COD">("CASHFREE");
@@ -87,8 +87,8 @@ export default function Checkout() {
       return;
     }
 
-    if (!address1.trim() || !city.trim() || !postalCode.trim()) {
-      Alert.alert("Incomplete Address", "Please provide complete shipping address details.");
+    if (!fullName.trim() || !address1.trim() || !city.trim() || !postalCode.trim() || !phone.trim()) {
+      Alert.alert("Incomplete Address", "Please fill in Full Name, Address, City, Postal Code and Mobile Number.");
       return;
     }
 
@@ -139,11 +139,15 @@ export default function Checkout() {
       });
 
       if (verifyRes.success) {
-        Alert.alert(
-          "Payment Successful 🎉",
-          `Order #${verifyRes.orderId.slice(-6).toUpperCase()} placed successfully! Total: ₹${verifyRes.total}`,
-          [{ text: "VIEW ORDERS", onPress: () => router.push("/orders") }]
-        );
+        // Auto-navigate to orders — no manual tap needed
+        router.push("/orders");
+        // Show a brief success toast after navigation
+        setTimeout(() => {
+          Alert.alert(
+            "Payment Successful \uD83C\uDF89",
+            `Order #${verifyRes.orderId.slice(-6).toUpperCase()} placed! Total: \u20B9${verifyRes.total}`
+          );
+        }, 400);
       } else {
         Alert.alert("Payment Verification Failed", verifyRes.message || "Please contact support.");
       }

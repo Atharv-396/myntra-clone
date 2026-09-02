@@ -163,7 +163,7 @@ export default function Bag() {
       const result = await validateCart(user._id);
       if (result.priceChanges.length > 0) {
         const names = result.priceChanges
-          .map((p) => `${p.productName}: â‚¹${p.oldPrice}â†’â‚¹${p.newPrice}`)
+          .map((p) => `${p.productName}: \u20B9${p.oldPrice}\u2192\u20B9${p.newPrice}`)
           .join("\n");
         Alert.alert("Price Updated", `Some prices have changed:\n${names}\n\nProceeding with new prices.`);
         setPriceChanges(result.priceChanges);
@@ -252,7 +252,7 @@ export default function Bag() {
                     <Text style={[styles.brandName, { color: theme.colors.textTertiary }]}>{item.brand}</Text>
                     <Text style={[styles.itemName, { color: theme.colors.textPrimary }]}>{item.name}</Text>
                     <Text style={[styles.itemSize, { color: theme.colors.textSecondary }]}>Size: {item.size}</Text>
-                    <Text style={[styles.itemPrice, { color: theme.colors.textPrimary }]}>â‚¹{item.priceAtAdd}</Text>
+                    <Text style={[styles.itemPrice, { color: theme.colors.textPrimary }]}>&#x20B9;{item.priceAtAdd}</Text>
                     <View style={styles.quantityContainer}>
                       <TouchableOpacity
                         style={[styles.quantityButton, { backgroundColor: theme.colors.surfaceSecondary }]}
@@ -281,7 +281,7 @@ export default function Bag() {
             <View style={[styles.footer, { backgroundColor: theme.colors.card, borderTopColor: theme.colors.divider, paddingBottom: footerPaddingBottom }]}>
               <View style={styles.totalContainer}>
                 <Text style={[styles.totalLabel, { color: theme.colors.textSecondary }]}>Estimated Total</Text>
-                <Text style={[styles.totalAmount, { color: theme.colors.primary }]}>₹{guestTotal}</Text>
+                <Text style={[styles.totalAmount, { color: theme.colors.primary }]}>&#x20B9;{guestTotal}</Text>
               </View>
               <TouchableOpacity
                 style={[styles.checkoutButton, { backgroundColor: theme.colors.primary }]}
@@ -356,7 +356,7 @@ export default function Bag() {
             <Text style={[styles.itemSize, { color: theme.colors.textSecondary }]}>Size: {item.size}</Text>
           ) : null}
 
-          <Text style={[styles.itemPrice, { color: theme.colors.textPrimary }]}>â‚¹{product?.price}</Text>
+          <Text style={[styles.itemPrice, { color: theme.colors.textPrimary }]}>&#x20B9;{product?.price}</Text>
 
           {!isSavedSection && (
             <View style={styles.quantityContainer}>
@@ -453,17 +453,17 @@ export default function Bag() {
           <View style={styles.totalsBox}>
             <View style={styles.totalRow}>
               <Text style={[styles.totalLabel, { color: theme.colors.textSecondary }]}>Subtotal</Text>
-              <Text style={[styles.totalValue, { color: theme.colors.textPrimary }]}>â‚¹{totals.subtotal}</Text>
+              <Text style={[styles.totalValue, { color: theme.colors.textPrimary }]}>&#x20B9;{totals.subtotal}</Text>
             </View>
             <View style={styles.totalRow}>
               <Text style={[styles.totalLabel, { color: theme.colors.textSecondary }]}>Shipping</Text>
               <Text style={[styles.totalValue, { color: theme.colors.textPrimary }]}>
-                {totals.shipping === 0 ? "FREE" : `â‚¹${totals.shipping}`}
+                {totals.shipping === 0 ? "FREE" : `\u20B9${totals.shipping}`}
               </Text>
             </View>
             <View style={[styles.totalRow, styles.grandTotalRow, { borderTopColor: theme.colors.divider }]}>
               <Text style={[styles.grandTotalLabel, { color: theme.colors.textPrimary }]}>Total</Text>
-              <Text style={[styles.grandTotalValue, { color: theme.colors.primary }]}>â‚¹{totals.grandTotal}</Text>
+              <Text style={[styles.grandTotalValue, { color: theme.colors.primary }]}>&#x20B9;{totals.grandTotal}</Text>
             </View>
           </View>
           <TouchableOpacity
