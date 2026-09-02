@@ -324,42 +324,23 @@ export default function Orders() {
     }
   };
 
-  // ── Cancel Order ─────────────────────────────────────────────────────────────
-  // NOTE: We do NOT call Alert inside the onPress of another Alert (nested Alert)
-  // because on some Android versions nested Alerts are unreliable.
-  // Instead we use a two-step approach: first Alert for confirmation, then do the work.
-  const handleCancelOrder = (order: any) => {
-    Alert.alert(
-      "Cancel Order",
-      `Cancel order #${order._id.slice(-8).toUpperCase()}?\n\nThis cannot be undone.`,
-      [
-        { text: "Keep Order", style: "cancel" },
-        {
-          text: "Yes, Cancel",
-          style: "destructive",
-          onPress: () => executeCancelOrder(order._id),
-        },
-      ],
-      { cancelable: true }
-    );
-  };
-
-  const executeCancelOrder = async (orderId: string) => {
+  // ── Cancel Order — direct, no confirmation dialog ───────────────────────────
+  const handleCancelOrder = async (order: any) => {
     const currentUser = userRef.current;
     if (!currentUser) return;
 
-    setCancelLoading(orderId);
+    setCancelLoading(order._id);
     try {
       await axios.post(
-        `${BASE_URL}/order/${orderId}/cancel`,
+        `${BASE_URL}/order/${order._id}/cancel`,
         { userId: currentUser._id, reason: "Cancelled by customer" },
         { timeout: 15000 }
       );
-      // Update local state immediately without refetch
+      // Update local state immediately
       setOrders(prev =>
-        prev.map(o => o._id === orderId ? { ...o, status: "Cancelled" } : o)
+        prev.map(o => o._id === order._id ? { ...o, status: "Cancelled" } : o)
       );
-      Alert.alert("Cancelled ✓", "Your order has been cancelled successfully.");
+      Alert.alert("Order Cancelled", "Your order has been cancelled successfully.");
     } catch (e: any) {
       console.log("Cancel error:", e?.response?.data, e?.message);
       Alert.alert(
