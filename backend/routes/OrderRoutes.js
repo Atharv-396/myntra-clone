@@ -272,4 +272,171 @@ router.patch("/:orderId/status", async (req, res) => {
   }
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /order/:orderId/cancel — Cancel an order
+// Only allowed when status is "Processing" or "Packed"
+// Body: { userId, reason? }
+// ─────────────────────────────────────────────────────────────────────────────
+router.post("/:orderId/cancel", async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { userId, reason = "Cancelled by customer" } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(orderId))
+      return res.status(400).json({ message: "Invalid orderId" });
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId))
+      return res.status(400).json({ message: "Valid userId is required" });
+
+    const order = await Order.findOne({ _id: orderId, userId });
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    const CANCELLABLE_STATUSES = ["Processing", "Packed"];
+    if (!CANCELLABLE_STATUSES.includes(order.status)) {
+      return res.status(400).json({
+        message: `Cannot cancel an order with status "${order.status}". Only Processing or Packed orders can be cancelled.`,
+      });
+    }
+
+    order.status = "Cancelled";
+    order.cancellationReason = reason;
+    order.cancelledAt = new Date();
+    if (order.tracking) order.tracking.status = "Cancelled";
+    await order.save();
+
+    sendNotification({
+      userId: userId.toString(),
+      category: NOTIFICATION_CATEGORIES.ORDER,
+      type: NOTIFICATION_TYPES.ORDER_CANCELLED,
+      title: "Order Cancelled",
+      body: `Your order #${orderId.slice(-6).toUpperCase()} has been cancelled.`,
+      data: { type: "ORDER_CANCELLED", category: "ORDER", orderId },
+      idempotencyKey: `order_cancelled:${orderId}`,
+    }).catch(() => {});
+
+    return res.status(200).json({ message: "Order cancelled successfully", orderId, status: "Cancelled" });
+  } catch (error) {
+    console.log("POST /order/:orderId/cancel error:", error);
+    return res.status(500).json({ message: "Something went wrong" });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /order/:orderId/return — Request a return
+// Only allowed when status is "Delivered"
+// Body: { userId, reason }
+// ─────────────────────────────────────────────────────────────────────────────
+router.post("/:orderId/return", async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { userId, reason = "Return requested by customer" } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(orderId))
+      return res.status(400).json({ message: "Invalid orderId" });
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId))
+      return res.status(400).json({ message: "Valid userId is required" });
+
+    const order = await Order.findOne({ _id: orderId, userId });
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    if (order.status !== "Delivered") {
+      return res.status(400).json({
+        message: `Return can only be requested for Delivered orders. Current status: "${order.status}"`,
+      });
+    }
+
+    if (order.returnStatus === "Requested" || order.returnStatus === "Approved") {
+      return res.status(400).json({ message: "A return has already been requested for this order." });
+    }
+
+    order.returnStatus = "Requested";
+    order.returnReason = reason;
+    order.returnRequestedAt = new Date();
+    order.status = "Return Requested";
+    if (order.tracking) order.tracking.status = "Return Requested";
+    await order.save();
+
+    sendNotification({
+      userId: userId.toString(),
+      category: NOTIFICATION_CATEGORIES.ORDER,
+      type: NOTIFICATION_TYPES.ORDER_RETURNED,
+      title: "Return Requested 🔄",
+      body: `Return request for order #${orderId.slice(-6).toUpperCase()} has been submitted.`,
+      data: { type: "ORDER_RETURNED", category: "ORDER", orderId },
+      idempotencyKey: `order_return:${orderId}`,
+    }).catch(() => {});
+
+    return res.status(200).json({ message: "Return request submitted", orderId, returnStatus: "Requested" });
+  } catch (error) {
+    console.log("POST /order/:orderId/return error:", error);
+    return res.status(500).json({ message: "Something went wrong" });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /order/:orderId/reorder — Re-add all items from a past order to the bag
+// Body: { userId }
+// ─────────────────────────────────────────────────────────────────────────────
+router.post("/:orderId/reorder", async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { userId } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(orderId))
+      return res.status(400).json({ message: "Invalid orderId" });
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId))
+      return res.status(400).json({ message: "Valid userId is required" });
+
+    const order = await Order.findOne({ _id: orderId, userId }).populate("items.productId");
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    const added = [];
+    const skipped = [];
+
+    for (const item of order.items) {
+      const product = item.productId;
+      if (!product || product.active === false) {
+        skipped.push({ reason: "Product unavailable", productId: item.productId?._id || item.productId });
+        continue;
+      }
+
+      const size = item.size || (product.sizes?.[0] ?? "M");
+      const maxQty = product.maxPerOrder || 10;
+      const qty = Math.min(item.quantity || 1, maxQty);
+
+      if (product.stock !== undefined && product.stock === 0) {
+        skipped.push({ reason: "Out of stock", productName: product.name });
+        continue;
+      }
+
+      const existing = await Bag.findOne({ userId, productId: product._id, size, color: item.color || "", savedForLater: false });
+      if (existing) {
+        existing.quantity = Math.min(existing.quantity + qty, maxQty);
+        await existing.save();
+      } else {
+        await Bag.create({
+          userId,
+          productId: product._id,
+          size,
+          color: item.color || "",
+          quantity: qty,
+          priceAtAdd: product.price,
+          savedForLater: false,
+        });
+      }
+      added.push({ productName: product.name, size });
+    }
+
+    return res.status(200).json({
+      message: "Reorder complete",
+      addedCount: added.length,
+      skippedCount: skipped.length,
+      added,
+      skipped,
+    });
+  } catch (error) {
+    console.log("POST /order/:orderId/reorder error:", error);
+    return res.status(500).json({ message: "Something went wrong" });
+  }
+});
+
 module.exports = router;
