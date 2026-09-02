@@ -3,6 +3,7 @@ const Bag = require("../models/Bag");
 const Order = require("../models/Order");
 const router = express.Router();
 const mongoose = require("mongoose");
+const { validateParamUserId } = require("../middleware/validateUserId");
 const { sendNotification } = require("../services/notificationService");
 const { NOTIFICATION_CATEGORIES, NOTIFICATION_TYPES } = require("../constants/notificationTypes");
 
@@ -46,7 +47,7 @@ function genrateRandomTracking() {
 // Validates product availability, stock, and detects price changes.
 // Returns: subtotal, shipping, tax, grandTotal, items, priceChanges, warnings
 // ─────────────────────────────────────────────────────────────────────────────
-router.get("/checkout-summary/:userId", async (req, res) => {
+router.get("/checkout-summary/:userId", validateParamUserId("userId"), async (req, res) => {
   try {
     const { userId } = req.params;
     if (!mongoose.Types.ObjectId.isValid(userId)) {
@@ -209,7 +210,7 @@ router.post("/create/:userId", async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /order/user/:userid
 // ─────────────────────────────────────────────────────────────────────────────
-router.get("/user/:userid", async (req, res) => {
+router.get("/user/:userid", validateParamUserId("userid"), async (req, res) => {
   try {
     const order = await Order.find({ userId: req.params.userid }).populate("items.productId");
     res.status(200).json(order);

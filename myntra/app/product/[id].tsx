@@ -98,6 +98,10 @@ export default function ProductDetails() {
           size: sizeToUse,
           color: product.color || "Default",
           productImage: product.images?.[0] || "",
+          // Flat aliases so bag.tsx renders correctly
+          name: product.name,
+          brand: product.brand,
+          image: product.images?.[0] || "",
           quantity: 1,
           addedAt: new Date().toISOString(),
         });

@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const RecentlyViewed = require("../models/RecentlyViewed");
 const Order = require("../models/Order");
 const router = express.Router();
+const { validateParamUserId } = require("../middleware/validateUserId");
 
 const MAX_HISTORY = 50; // extended from 20 to support recommendation engine
 
@@ -56,7 +57,7 @@ router.post("/", async (req, res) => {
 
 // GET /recently-viewed/:userId
 // Returns recently viewed products, newest first, populated with product data
-router.get("/:userId", async (req, res) => {
+router.get("/:userId", validateParamUserId("userId"), async (req, res) => {
   try {
     const { userId } = req.params;
 
@@ -91,7 +92,7 @@ router.get("/:userId", async (req, res) => {
 
 // GET /recently-viewed/:userId/continue-shopping
 // Returns products viewed but NOT purchased — for "Continue Shopping" section
-router.get("/:userId/continue-shopping", async (req, res) => {
+router.get("/:userId/continue-shopping", validateParamUserId("userId"), async (req, res) => {
   try {
     const { userId } = req.params;
 
@@ -196,7 +197,7 @@ router.post("/merge", async (req, res) => {
 
 // DELETE /recently-viewed/:userId
 // Clear entire recently viewed history for a user
-router.delete("/:userId", async (req, res) => {
+router.delete("/:userId", validateParamUserId("userId"), async (req, res) => {
   try {
     const { userId } = req.params;
 

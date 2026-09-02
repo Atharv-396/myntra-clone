@@ -13,9 +13,14 @@ export interface GuestCartItem {
   color: string;
   quantity: number;
   priceAtAdd: number;
+  // Canonical long-form names (stored in SecureStore/localStorage)
   productName: string;
   productBrand: string;
   productImage: string;
+  // Short-form aliases (added for bag.tsx rendering compatibility)
+  name?: string;
+  brand?: string;
+  image?: string;
   addedAt: string;
 }
 

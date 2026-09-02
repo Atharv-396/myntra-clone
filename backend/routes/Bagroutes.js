@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const Bag = require("../models/Bag");
 const Product = require("../models/Product");
 const router = express.Router();
+const { validateBodyUserId, validateParamUserId } = require("../middleware/validateUserId");
 
 // IMPORTANT: Express matches routes in order of definition.
 // Specific literal paths (e.g. /merge, /validate, /clear/:id, /totals/:id)
@@ -188,7 +189,7 @@ router.post("/move-to-cart/:itemid", async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /bag/totals/:userid — MUST be before GET /:userid
 // ─────────────────────────────────────────────────────────────────────────────
-router.get("/totals/:userid", async (req, res) => {
+router.get("/totals/:userid", validateParamUserId("userid"), async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.userid)) return res.status(400).json({ message: "Invalid userId" });
     const items = await Bag.find({ userId: req.params.userid, savedForLater: false, unavailable: false }).populate("productId");
@@ -202,7 +203,7 @@ router.get("/totals/:userid", async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // DELETE /bag/clear/:userid — MUST be before DELETE /:itemid
 // ─────────────────────────────────────────────────────────────────────────────
-router.delete("/clear/:userid", async (req, res) => {
+router.delete("/clear/:userid", validateParamUserId("userid"), async (req, res) => {
   try {
     const { userid } = req.params;
     if (!mongoose.Types.ObjectId.isValid(userid)) {
@@ -258,7 +259,7 @@ router.delete("/:itemid", async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /bag/:userid — get all items (AFTER /totals/:userid)
 // ─────────────────────────────────────────────────────────────────────────────
-router.get("/:userid", async (req, res) => {
+router.get("/:userid", validateParamUserId("userid"), async (req, res) => {
   try {
     const items = await Bag.find({ userId: req.params.userid }).populate("productId");
     res.status(200).json(items);

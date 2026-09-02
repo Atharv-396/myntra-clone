@@ -251,7 +251,10 @@ export interface FetchNotificationsResponse {
 
 export async function fetchNotifications(userId: string): Promise<FetchNotificationsResponse> {
   try {
-    const res = await axios.get(`${BASE_URL}/api/notifications/${userId}`);
+    // Backend expects userId as a query param: GET /api/notifications?userId=...
+    const res = await axios.get(`${BASE_URL}/api/notifications`, {
+      params: { userId },
+    });
     if (res.data && Array.isArray(res.data.notifications)) {
       return res.data;
     }
@@ -264,9 +267,10 @@ export async function fetchNotifications(userId: string): Promise<FetchNotificat
   }
 }
 
-export async function markNotificationRead(id: string): Promise<void> {
+export async function markNotificationRead(userId: string, id: string): Promise<void> {
   try {
-    await axios.patch(`${BASE_URL}/api/notifications/${id}/read`);
+    // Backend requires userId in body for ownership verification
+    await axios.patch(`${BASE_URL}/api/notifications/${id}/read`, { userId });
   } catch (err: any) {
     console.log("[Notifications] markNotificationRead error:", err.message);
   }
@@ -274,7 +278,8 @@ export async function markNotificationRead(id: string): Promise<void> {
 
 export async function markAllRead(userId: string): Promise<void> {
   try {
-    await axios.patch(`${BASE_URL}/api/notifications/read-all/${userId}`);
+    // Backend expects userId in body: PATCH /api/notifications/read-all
+    await axios.patch(`${BASE_URL}/api/notifications/read-all`, { userId });
   } catch (err: any) {
     console.log("[Notifications] markAllRead error:", err.message);
   }

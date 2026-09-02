@@ -283,10 +283,10 @@ export default function Bag() {
                     { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider },
                   ]}
                 >
-                  <Image source={{ uri: item.image }} style={styles.itemImage} />
+                  <Image source={{ uri: item.image || item.productImage }} style={styles.itemImage} />
                   <View style={styles.itemInfo}>
-                    <Text style={[styles.brandName, { color: theme.colors.textTertiary }]}>{item.brand}</Text>
-                    <Text style={[styles.itemName, { color: theme.colors.textPrimary }]}>{item.name}</Text>
+                    <Text style={[styles.brandName, { color: theme.colors.textTertiary }]}>{item.brand || item.productBrand}</Text>
+                    <Text style={[styles.itemName, { color: theme.colors.textPrimary }]}>{item.name || item.productName}</Text>
                     <Text style={[styles.itemSize, { color: theme.colors.textSecondary }]}>Size: {item.size}</Text>
                     <Text style={[styles.itemPrice, { color: theme.colors.textPrimary }]}>&#x20B9;{item.priceAtAdd}</Text>
                     <View style={styles.quantityContainer}>

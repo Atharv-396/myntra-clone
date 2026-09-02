@@ -81,11 +81,11 @@ export const mergeLocalHistoryAfterLogin = async (
   }
 };
 
-/** Clear all recently viewed history for a user (on logout or user request) */
+/** Clear all recently viewed history for a user (on logout or user request).
+ * Throws on failure so callers can handle the error. */
 export const clearRecentlyViewed = async (userId: string): Promise<void> => {
-  try {
-    await axios.delete(`${BASE_URL}/recently-viewed/${userId}`);
-  } catch (e) {
-    console.log("clearRecentlyViewed error:", e);
+  const res = await axios.delete(`${BASE_URL}/recently-viewed/${userId}`);
+  if (res.status < 200 || res.status >= 300) {
+    throw new Error(`Failed to clear recently viewed: server returned ${res.status}`);
   }
 };
