@@ -7,10 +7,9 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Trash2, ChevronLeft } from "lucide-react-native";
+import { Trash2, ChevronLeft, AlertCircle, X } from "lucide-react-native";
 import { useAuth } from "@/context/AuthContext";
 import {
   fetchRecentlyViewed,
@@ -32,10 +31,14 @@ export default function RecentlyViewedScreen() {
   const { headerPaddingTop, productGridColumns, width } = useResponsive();
   const [items, setItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isClearing, setIsClearing] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const loadHistory = useCallback(async () => {
     if (!isHydrated) return;
     setIsLoading(true);
+    setErrorMsg(null);
     try {
       if (user) {
         const data = await fetchRecentlyViewed(user._id);
@@ -63,75 +66,134 @@ export default function RecentlyViewedScreen() {
     }
   }, [user, isHydrated]);
 
-  // Trigger load once client has hydrated
   useEffect(() => {
     if (isHydrated) {
       loadHistory();
     }
   }, [isHydrated, loadHistory]);
 
-  // ─── Clear all handler ────────────────────────────────────────────────────
-  // NOTE: Alert.alert must NOT be inside setTimeout on React Native —
-  // doing so breaks the gesture responder and prevents the dialog from showing.
-  const handleClearAll = () => {
-    Alert.alert(
-      "Clear History",
-      "Are you sure you want to clear your recently viewed history?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Clear",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              if (user) {
-                await clearRecentlyViewed(user._id);
-              } else {
-                await clearLocalRecentlyViewed();
-              }
-              setItems([]);
-            } catch (e: any) {
-              console.log("clearRecentlyViewed error:", e?.message);
-              Alert.alert("Error", "Could not clear history. Please try again.");
-            }
-          },
-        },
-      ],
-      { cancelable: true }
-    );
+  // ── Inline confirm flow — no Alert.alert, works reliably on all platforms ──
+
+  const handleClearPress = () => {
+    setShowConfirm(true);
+    setErrorMsg(null);
+  };
+
+  const handleCancelClear = () => {
+    setShowConfirm(false);
+  };
+
+  const handleConfirmClear = async () => {
+    setShowConfirm(false);
+    setIsClearing(true);
+    setErrorMsg(null);
+    try {
+      if (user) {
+        // Call backend — rethrow on HTTP error so catch block fires
+        const res = await axios.delete(
+          `${BASE_URL}/recently-viewed/${user._id}`
+        );
+        if (res.status < 200 || res.status >= 300) {
+          throw new Error(`Server returned ${res.status}`);
+        }
+      } else {
+        await clearLocalRecentlyViewed();
+      }
+      setItems([]);
+    } catch (e: any) {
+      console.log("clearRecentlyViewed error:", e?.response?.data, e?.message);
+      setErrorMsg("Could not clear history. Tap to retry.");
+    } finally {
+      setIsClearing(false);
+    }
   };
 
   if (isLoading) {
     return (
-      <View style={[styles.loaderContainer, { backgroundColor: theme.colors.background }]}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider, paddingTop: headerPaddingTop }]}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
+            <ChevronLeft size={24} color={theme.colors.icon} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>Recently Viewed</Text>
+        </View>
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+        </View>
       </View>
     );
   }
 
+  const cardGap = 12;
+  const gridPadding = 24;
+  const cardWidth = Math.floor(
+    (width - gridPadding - (productGridColumns - 1) * cardGap) / productGridColumns
+  );
+  const cardImageHeight = Math.round(cardWidth * 1.25);
+
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      {/* Header */}
+      {/* ── Header ── */}
       <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider, paddingTop: headerPaddingTop }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
           <ChevronLeft size={24} color={theme.colors.icon} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>Recently Viewed</Text>
-        {items.length > 0 && (
+        <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>
+          Recently Viewed {items.length > 0 ? `(${items.length})` : ""}
+        </Text>
+        {items.length > 0 && !isClearing && (
           <TouchableOpacity
-            onPress={handleClearAll}
+            onPress={handleClearPress}
             style={styles.clearBtn}
             activeOpacity={0.6}
-            hitSlop={{ top: 10, bottom: 10, left: 12, right: 8 }}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 8 }}
           >
             <Trash2 size={20} color={theme.colors.primary} />
           </TouchableOpacity>
         )}
+        {isClearing && (
+          <ActivityIndicator size="small" color={theme.colors.primary} style={styles.clearBtn} />
+        )}
       </View>
 
+      {/* ── Inline confirm banner ── */}
+      {showConfirm && (
+        <View style={[styles.confirmBanner, { backgroundColor: theme.isDark ? "#2A1D24" : "#FFF0F3", borderColor: theme.colors.primary }]}>
+          <AlertCircle size={18} color={theme.colors.primary} />
+          <Text style={[styles.confirmText, { color: theme.colors.textPrimary }]}>
+            Clear all recently viewed?
+          </Text>
+          <TouchableOpacity
+            onPress={handleConfirmClear}
+            style={[styles.confirmYes, { backgroundColor: theme.colors.primary }]}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.confirmYesText, { color: theme.colors.primaryText }]}>Yes, Clear</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleCancelClear} style={styles.confirmNo} activeOpacity={0.7}>
+            <X size={18} color={theme.colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* ── Error banner ── */}
+      {errorMsg && (
+        <TouchableOpacity
+          style={[styles.errorBanner, { backgroundColor: theme.isDark ? "#3A1B1F" : "#FFEEF0" }]}
+          onPress={handleConfirmClear}
+          activeOpacity={0.8}
+        >
+          <AlertCircle size={16} color={theme.colors.error} />
+          <Text style={[styles.errorText, { color: theme.colors.error }]}>{errorMsg}</Text>
+        </TouchableOpacity>
+      )}
+
+      {/* ── Empty state ── */}
       {items.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={[styles.emptyTitle, { color: theme.colors.textPrimary }]}>No recently viewed products</Text>
+          <Text style={[styles.emptyTitle, { color: theme.colors.textPrimary }]}>
+            No recently viewed products
+          </Text>
           <Text style={[styles.emptySubtitle, { color: theme.colors.textSecondary }]}>
             Products you view will appear here
           </Text>
@@ -144,62 +206,53 @@ export default function RecentlyViewedScreen() {
           </TouchableOpacity>
         </View>
       ) : (
-        <ScrollView style={styles.content}>
-          {(() => {
-            const cardGap = 12;
-            const gridPadding = 24;
-            const cardWidth = Math.floor(
-              (width - gridPadding - (productGridColumns - 1) * cardGap) / productGridColumns
-            );
-            const cardImageHeight = Math.round(cardWidth * 1.25);
-            return (
-              <View style={styles.grid}>
-                {items.map((item, index) => {
-                  const product = item.product;
-                  if (!product) return null;
-                  return (
-                    <TouchableOpacity
-                      key={product._id || index}
-                      style={[
-                        styles.productCard,
-                        {
-                          width: cardWidth,
-                          backgroundColor: theme.colors.card,
-                          borderColor: theme.colors.border,
-                          borderWidth: 1,
-                        },
-                      ]}
-                      onPress={() => router.push(`/product/${product._id}`)}
-                      activeOpacity={0.85}
-                    >
-                      <Image
-                        source={{ uri: product.images?.[0] }}
-                        style={[styles.productImage, { height: cardImageHeight }]}
-                      />
-                      <View style={styles.productInfo}>
-                        <Text style={[styles.brandName, { color: theme.colors.textTertiary }]} numberOfLines={1}>
-                          {product.brand}
+        <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
+          <View style={styles.grid}>
+            {items.map((item, index) => {
+              const product = item.product;
+              if (!product) return null;
+              return (
+                <TouchableOpacity
+                  key={product._id || index}
+                  style={[
+                    styles.productCard,
+                    {
+                      width: cardWidth,
+                      backgroundColor: theme.colors.card,
+                      borderColor: theme.colors.border,
+                      borderWidth: 1,
+                    },
+                  ]}
+                  onPress={() => router.push(`/product/${product._id}`)}
+                  activeOpacity={0.85}
+                >
+                  <Image
+                    source={{ uri: product.images?.[0] }}
+                    style={[styles.productImage, { height: cardImageHeight }]}
+                    resizeMode="cover"
+                  />
+                  <View style={styles.productInfo}>
+                    <Text style={[styles.brandName, { color: theme.colors.textTertiary }]} numberOfLines={1}>
+                      {product.brand}
+                    </Text>
+                    <Text style={[styles.productName, { color: theme.colors.textPrimary }]} numberOfLines={2}>
+                      {product.name}
+                    </Text>
+                    <View style={styles.priceRow}>
+                      <Text style={[styles.price, { color: theme.colors.textPrimary }]}>
+                        {"\u20B9"}{product.price}
+                      </Text>
+                      {product.discount ? (
+                        <Text style={[styles.discount, { color: theme.colors.primary }]}>
+                          {product.discount}
                         </Text>
-                        <Text style={[styles.productName, { color: theme.colors.textPrimary }]} numberOfLines={2}>
-                          {product.name}
-                        </Text>
-                        <View style={styles.priceRow}>
-                          <Text style={[styles.price, { color: theme.colors.textPrimary }]}>
-                            &#x20B9;{product.price}
-                          </Text>
-                          {product.discount ? (
-                            <Text style={[styles.discount, { color: theme.colors.primary }]}>
-                              {product.discount}
-                            </Text>
-                          ) : null}
-                        </View>
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            );
-          })()}
+                      ) : null}
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </ScrollView>
       )}
     </View>
@@ -227,7 +280,44 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   clearBtn: { padding: 8 },
-  content: { flex: 1, padding: 12 },
+  confirmBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    gap: 10,
+  },
+  confirmText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  confirmYes: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 6,
+  },
+  confirmYesText: {
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  confirmNo: {
+    padding: 4,
+  },
+  errorBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    gap: 8,
+  },
+  errorText: {
+    fontSize: 13,
+    flex: 1,
+  },
+  content: { flex: 1 },
+  scrollContent: { padding: 12 },
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",

@@ -458,11 +458,6 @@ export default function Bag() {
         <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>
           Shopping Bag ({cartItems.length})
         </Text>
-        {cartItems.length > 0 && (
-          <TouchableOpacity onPress={handleClearCart} activeOpacity={0.6} hitSlop={{ top: 10, bottom: 10, left: 16, right: 8 }}>
-            <Text style={[styles.clearText, { color: theme.colors.primary }]}>Clear</Text>
-          </TouchableOpacity>
-        )}
       </View>
 
       <ScrollView
