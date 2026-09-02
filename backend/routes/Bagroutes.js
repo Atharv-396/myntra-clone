@@ -204,8 +204,12 @@ router.get("/totals/:userid", async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 router.delete("/clear/:userid", async (req, res) => {
   try {
-    await Bag.deleteMany({ userId: req.params.userid, savedForLater: false });
-    res.status(200).json({ message: "Cart cleared" });
+    const { userid } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(userid)) {
+      return res.status(400).json({ message: "Invalid userId" });
+    }
+    const result = await Bag.deleteMany({ userId: userid, savedForLater: false });
+    res.status(200).json({ message: "Cart cleared", deletedCount: result.deletedCount });
   } catch (error) {
     console.log("DELETE /bag/clear error:", error);
     return res.status(500).json({ message: "Something went wrong" });

@@ -148,7 +148,18 @@ export default function Bag() {
             setCartItems([]);
             setSavedItems([]);
           } catch (e: any) {
-            Alert.alert("Error", e?.response?.data?.message || "Could not clear cart. Please try again.");
+            console.log("clearCart error:", JSON.stringify(e?.response?.data), e?.message);
+            // If the API call fails, fall back to removing items one by one
+            try {
+              await Promise.all([
+                ...cartItems.map((item) => removeFromCart(item._id)),
+                ...savedItems.map((item) => removeFromCart(item._id)),
+              ]);
+              setCartItems([]);
+              setSavedItems([]);
+            } catch (fallbackErr) {
+              Alert.alert("Error", "Could not clear cart. Please try again.");
+            }
           }
         },
       },
