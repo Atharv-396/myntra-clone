@@ -8,6 +8,7 @@ import { initializeNotifications, deregisterDevice } from "@/utils/notificationS
 
 type AuthContextType = {
   isAuthenticated: boolean;
+  isHydrated: boolean;
   user: { _id: string; name: string; email: string; themePreference?: string } | null;
   Signup: (fullName: string, email: string, password: string) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
@@ -18,6 +19,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // isHydrated = false during SSR and before the first client-side session restore.
+  // Components that read `user` must not render auth-dependent UI until this is true,
+  // which prevents the server/client mismatch that causes React error #418.
+  const [isHydrated, setIsHydrated] = useState(false);
   const [user, setUser] = useState<{
     _id: string;
     name: string;
@@ -25,7 +30,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     themePreference?: string;
   } | null>(null);
 
-  // Restore session on app start
+  // Restore session on app start — runs only on the client after mount
   useEffect(() => {
     (async () => {
       try {
@@ -40,6 +45,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       } catch (e) {
         console.log("Session restore failed:", e);
+      } finally {
+        // Always mark hydrated after the first session check completes,
+        // regardless of whether a user was found.
+        setIsHydrated(true);
       }
     })();
   }, []);
@@ -119,7 +128,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, Signup, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, isHydrated, user, Signup, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

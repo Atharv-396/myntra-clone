@@ -19,7 +19,7 @@ import { useResponsive } from "@/hooks/useResponsive";
 
 export default function Bag() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, isHydrated } = useAuth();
   const { theme } = useTheme();
   const { headerPaddingTop, footerPaddingBottom, isTablet } = useResponsive();
 
@@ -136,34 +136,36 @@ export default function Bag() {
   };
 
   const handleClearCart = () => {
-    Alert.alert("Clear Cart", "Remove all items from your cart?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Clear",
-        style: "destructive",
-        onPress: async () => {
-          if (!user) return;
-          try {
-            await clearCart(user._id);
-            setCartItems([]);
-            setSavedItems([]);
-          } catch (e: any) {
-            console.log("clearCart error:", JSON.stringify(e?.response?.data), e?.message);
-            // If the API call fails, fall back to removing items one by one
+    // setTimeout(0) ensures the button loses focus before the Alert opens on web
+    setTimeout(() => {
+      Alert.alert("Clear Cart", "Remove all items from your cart?", [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Clear",
+          style: "destructive",
+          onPress: async () => {
+            if (!user) return;
             try {
-              await Promise.all([
-                ...cartItems.map((item) => removeFromCart(item._id)),
-                ...savedItems.map((item) => removeFromCart(item._id)),
-              ]);
+              await clearCart(user._id);
               setCartItems([]);
               setSavedItems([]);
-            } catch (fallbackErr) {
-              Alert.alert("Error", "Could not clear cart. Please try again.");
+            } catch (e: any) {
+              console.log("clearCart error:", JSON.stringify(e?.response?.data), e?.message);
+              try {
+                await Promise.all([
+                  ...cartItems.map((item) => removeFromCart(item._id)),
+                  ...savedItems.map((item) => removeFromCart(item._id)),
+                ]);
+                setCartItems([]);
+                setSavedItems([]);
+              } catch (fallbackErr) {
+                Alert.alert("Error", "Could not clear cart. Please try again.");
+              }
             }
-          }
+          },
         },
-      },
-    ]);
+      ]);
+    }, 0);
   };
 
   const handleCheckout = async () => {
@@ -220,6 +222,21 @@ export default function Bag() {
       )
     );
   };
+
+  // Hydration guard: on web static export the server always renders user=null.
+  // Don't branch on user state until the client has restored the session.
+  if (!isHydrated) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider, paddingTop: headerPaddingTop }]}>
+          <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>Shopping Bag</Text>
+        </View>
+        <View style={[styles.loaderContainer, { backgroundColor: "transparent" }]}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+        </View>
+      </View>
+    );
+  }
 
   if (!user) {
     const guestTotal = guestItems.reduce((s, i) => s + (i.priceAtAdd || 0) * (i.quantity || 1), 0);

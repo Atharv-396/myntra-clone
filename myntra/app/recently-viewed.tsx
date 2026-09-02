@@ -26,14 +26,24 @@ import { useTheme } from "@/theme";
 import { useResponsive } from "@/hooks/useResponsive";
 
 export default function RecentlyViewedScreen() {
-  const { user } = useAuth();
+  const { user, isHydrated } = useAuth();
   const router = useRouter();
   const { theme } = useTheme();
   const { headerPaddingTop, productGridColumns, width } = useResponsive();
   const [items, setItems] = useState<any[]>([]);
+  // Start in loading state; flip to false once hydrated+loaded or when no items found
   const [isLoading, setIsLoading] = useState(true);
 
+  // Once hydrated, kick off the first load
+  useEffect(() => {
+    if (isHydrated) {
+      loadHistory();
+    }
+  }, [isHydrated]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const loadHistory = useCallback(async () => {
+    // Wait for client-side hydration before reading auth state or localStorage
+    if (!isHydrated) return;
     setIsLoading(true);
     try {
       if (user) {
@@ -60,32 +70,32 @@ export default function RecentlyViewedScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
-
-  useEffect(() => {
-    loadHistory();
-  }, [loadHistory]);
+  }, [user, isHydrated]);
 
   const handleClearAll = () => {
-    Alert.alert(
-      "Clear History",
-      "Are you sure you want to clear your recently viewed history?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Clear",
-          style: "destructive",
-          onPress: async () => {
-            if (user) {
-              await clearRecentlyViewed(user._id);
-            } else {
-              await clearLocalRecentlyViewed();
-            }
-            setItems([]);
+    // setTimeout(0) ensures the button loses focus before the Alert opens,
+    // preventing the aria-hidden warning on web ("Blocked aria-hidden on focused element")
+    setTimeout(() => {
+      Alert.alert(
+        "Clear History",
+        "Are you sure you want to clear your recently viewed history?",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Clear",
+            style: "destructive",
+            onPress: async () => {
+              if (user) {
+                await clearRecentlyViewed(user._id);
+              } else {
+                await clearLocalRecentlyViewed();
+              }
+              setItems([]);
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    }, 0);
   };
 
   if (isLoading) {

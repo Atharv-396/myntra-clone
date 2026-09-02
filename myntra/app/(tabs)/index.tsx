@@ -41,7 +41,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [product, setproduct] = useState<any>(null);
   const [categories, setcategories] = useState<any>(null);
-  const { user } = useAuth();
+  const { user, isHydrated } = useAuth();
 
   const cardWidth = Math.floor((width - 32 - (productGridColumns - 1) * 8) / productGridColumns);
   const cardImageHeight = Math.round(cardWidth * 1.25);
@@ -162,7 +162,7 @@ export default function Home() {
       <ContinueShoppingSection />
 
       {/* You May Also Like */}
-      <YouMayAlsoLikeSection userId={user?._id} limit={10} />
+      <YouMayAlsoLikeSection userId={isHydrated ? user?._id : undefined} limit={10} />
 
       <View style={styles.section}>
         <View style={styles.sectionHeader}>

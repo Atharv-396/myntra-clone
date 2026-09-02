@@ -25,7 +25,7 @@ interface ContinueShoppingSectionProps {
 export default function ContinueShoppingSection({
   refreshKey = 0,
 }: ContinueShoppingSectionProps) {
-  const { user } = useAuth();
+  const { user, isHydrated } = useAuth();
   const router = useRouter();
   const { theme } = useTheme();
   const { carouselCardWidth, carouselImageHeight } = useResponsive();
@@ -34,7 +34,7 @@ export default function ContinueShoppingSection({
   const [addingToBag, setAddingToBag] = useState<string | null>(null);
 
   const loadItems = useCallback(async () => {
-    if (!user) return;
+    if (!isHydrated || !user) return;
     setIsLoading(true);
     try {
       const data = await fetchContinueShopping(user._id);
@@ -44,7 +44,7 @@ export default function ContinueShoppingSection({
     } finally {
       setIsLoading(false);
     }
-  }, [user, refreshKey]);
+  }, [user, isHydrated, refreshKey]);
 
   useEffect(() => {
     loadItems();
@@ -96,7 +96,8 @@ export default function ContinueShoppingSection({
     }
   };
 
-  if (!user) return null;
+  // Don't render until hydrated — avoids SSR/client mismatch (#418)
+  if (!isHydrated || !user) return null;
 
   if (isLoading) {
     return (

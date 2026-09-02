@@ -24,7 +24,7 @@ interface RecentlyViewedSectionProps {
 export default function RecentlyViewedSection({
   refreshKey = 0,
 }: RecentlyViewedSectionProps) {
-  const { user } = useAuth();
+  const { user, isHydrated } = useAuth();
   const router = useRouter();
   const { theme } = useTheme();
   const { carouselCardWidth, carouselImageHeight } = useResponsive();
@@ -32,6 +32,8 @@ export default function RecentlyViewedSection({
   const [isLoading, setIsLoading] = useState(false);
 
   const loadHistory = useCallback(async () => {
+    // Don't load until client has hydrated — avoids SSR/client mismatch
+    if (!isHydrated) return;
     setIsLoading(true);
     try {
       if (user) {
@@ -62,13 +64,21 @@ export default function RecentlyViewedSection({
     } finally {
       setIsLoading(false);
     }
-  }, [user, refreshKey]);
+  }, [user, isHydrated, refreshKey]);
 
   useFocusEffect(
     useCallback(() => {
       loadHistory();
     }, [loadHistory])
   );
+
+  // On web, useFocusEffect may not fire on initial mount after hydration,
+  // so also trigger via useEffect when isHydrated becomes true.
+  useEffect(() => {
+    if (isHydrated) {
+      loadHistory();
+    }
+  }, [isHydrated]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (isLoading) {
     return (

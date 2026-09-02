@@ -18,7 +18,7 @@ import { useResponsive } from "@/hooks/useResponsive";
 
 export default function Wishlist() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, isHydrated } = useAuth();
   const { theme } = useTheme();
   const { headerPaddingTop, isTablet } = useResponsive();
   const [wishlist, setwishlist] = useState<any>(null);
@@ -51,6 +51,22 @@ export default function Wishlist() {
       console.log(error);
     }
   };
+
+  // Wait for client-side hydration before branching on auth state.
+  // Without this guard, the server renders the login prompt while the client
+  // renders the real wishlist → React hydration mismatch (error #418).
+  if (!isHydrated) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <View style={[styles.header, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.divider, paddingTop: headerPaddingTop }]}>
+          <Text style={[styles.headerTitle, { color: theme.colors.textPrimary }]}>Wishlist</Text>
+        </View>
+        <View style={[styles.loaderContainer, { marginTop: 60 }]}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+        </View>
+      </View>
+    );
+  }
 
   if (!user) {
     return (

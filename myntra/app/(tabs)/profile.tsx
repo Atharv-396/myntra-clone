@@ -61,7 +61,7 @@ const THEME_OPTIONS: {
 
 export default function Profile() {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, logout, isHydrated } = useAuth();
   const { theme, themeMode, setThemeMode, systemTheme } = useTheme();
   const { headerPaddingTop } = useResponsive();
 
@@ -77,33 +77,38 @@ export default function Profile() {
       </View>
 
       <ScrollView style={styles.content}>
-        {/* User Card */}
-        {user ? (
-          <View style={[styles.userInfo, { backgroundColor: theme.colors.card }]}>
-            <View style={[styles.avatar, { backgroundColor: theme.colors.primary }]}>
-              <User size={40} color={theme.colors.primaryText} />
+        {/* User Card — only render after hydration to avoid SSR/client mismatch (#418) */}
+        {isHydrated ? (
+          user ? (
+            <View style={[styles.userInfo, { backgroundColor: theme.colors.card }]}>
+              <View style={[styles.avatar, { backgroundColor: theme.colors.primary }]}>
+                <User size={40} color={theme.colors.primaryText} />
+              </View>
+              <View style={styles.userDetails}>
+                <Text style={[styles.userName, { color: theme.colors.textPrimary }]}>{user.name}</Text>
+                <Text style={[styles.userEmail, { color: theme.colors.textSecondary }]}>{user.email}</Text>
+              </View>
             </View>
-            <View style={styles.userDetails}>
-              <Text style={[styles.userName, { color: theme.colors.textPrimary }]}>{user.name}</Text>
-              <Text style={[styles.userEmail, { color: theme.colors.textSecondary }]}>{user.email}</Text>
+          ) : (
+            <View style={[styles.guestCard, { backgroundColor: theme.colors.card }]}>
+              <User size={48} color={theme.colors.primary} />
+              <Text style={[styles.guestTitle, { color: theme.colors.textPrimary }]}>
+                Welcome to Myntra
+              </Text>
+              <Text style={[styles.guestSubtitle, { color: theme.colors.textSecondary }]}>
+                Login to view orders, saved items and synced settings
+              </Text>
+              <TouchableOpacity
+                style={[styles.loginButton, { backgroundColor: theme.colors.primary }]}
+                onPress={() => router.push("/login")}
+              >
+                <Text style={[styles.loginButtonText, { color: theme.colors.primaryText }]}>LOGIN / SIGNUP</Text>
+              </TouchableOpacity>
             </View>
-          </View>
+          )
         ) : (
-          <View style={[styles.guestCard, { backgroundColor: theme.colors.card }]}>
-            <User size={48} color={theme.colors.primary} />
-            <Text style={[styles.guestTitle, { color: theme.colors.textPrimary }]}>
-              Welcome to Myntra
-            </Text>
-            <Text style={[styles.guestSubtitle, { color: theme.colors.textSecondary }]}>
-              Login to view orders, saved items and synced settings
-            </Text>
-            <TouchableOpacity
-              style={[styles.loginButton, { backgroundColor: theme.colors.primary }]}
-              onPress={() => router.push("/login")}
-            >
-              <Text style={[styles.loginButtonText, { color: theme.colors.primaryText }]}>LOGIN / SIGNUP</Text>
-            </TouchableOpacity>
-          </View>
+          /* Placeholder matching the guest card height during hydration — keeps layout stable */
+          <View style={[styles.guestCard, { backgroundColor: theme.colors.card }]} />
         )}
 
         {/* Appearance / Theme Selector */}
@@ -153,8 +158,8 @@ export default function Profile() {
           })}
         </View>
 
-        {/* Menu Section */}
-        {user && (
+        {/* Menu Section — only after hydration */}
+        {isHydrated && user && (
           <>
             <View style={styles.sectionHeader}>
               <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>ACCOUNT & SETTINGS</Text>
